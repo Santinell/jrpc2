@@ -1,0 +1,12 @@
+{
+    "name": "jrpc2",
+    "version": "0.1",
+    "dependencies": {
+        "async": "*",
+        "express": "*",
+        "request": "*"
+    },
+    "devDependencies": {
+        "coffee-script": "*"
+    }
+}
