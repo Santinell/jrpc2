@@ -13,7 +13,7 @@ class client
         method: method
         params: params[i]
         jsonrpc: '2.0'
-    console.log request
+    #console.log request
     @transport.send JSON.stringify(request), callback
 
   call: (method, params, callback) ->
@@ -23,6 +23,7 @@ class client
       method: method
       params: params
       jsonrpc: '2.0'
+    #console.log request
     @transport.send JSON.stringify(request), callback
 
 

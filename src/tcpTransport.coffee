@@ -14,9 +14,9 @@ class tcpTransport
   listen: (server) ->
     tcp = net.createServer (socket) ->
       socket.on 'data', (data)->
-        console.log data.toString()
+        #console.log data.toString()
         server.handleRequest data, (answer) ->
-          console.log answer
+          #console.log answer
           socket.write JSON.stringify(answer)
 
     tcp.listen @params.port

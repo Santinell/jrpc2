@@ -74,7 +74,7 @@ class server
           callback null, response
       )(request)
 
-    async.series calls, (err, response) ->
+    async.parallel calls, (err, response) ->
       #TODO handle errors in err
       if !batch && response instanceof Array
         response = response[0]

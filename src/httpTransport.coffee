@@ -25,9 +25,9 @@ class httpTransport
         next()
 
     app.post '/', (req, res) ->
-      console.log req.rawBody
+      #console.log req.rawBody
       server.handleRequest req.rawBody, (answer) ->
-        console.log answer
+        #console.log answer
         res.set 'Content-Type', 'application/json'
         res.send JSON.stringify(answer)
         res.end()

@@ -1,12 +1,37 @@
 {
+    "author": "Santinell",
     "name": "jrpc2",
-    "version": "0.1",
+    "description": "JSON-RPC 2.0 library with support of batches and named parameters. Written on coffee-script.",
+    "version": "0.1.1",
+    "main": "./lib/jrpc2.js",
+    "keywords": [
+        "json",
+        "rpc",
+        "rpc2",
+        "json-rpc",
+        "json-rpc2",
+        "jsonrpc",
+        "jsonrpc2",
+        "server",
+        "client",
+        "tcp",
+        "http"
+    ],
+    "readmeFilename": "README.md",
     "dependencies": {
         "async": "*",
         "express": "*",
         "request": "*"
     },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/Santinell/jrpc2.git"
+    },
     "devDependencies": {
         "coffee-script": "*"
+    },
+    "homepage": "https://github.com/Santinell/jrpc2",
+    "engines": {
+        "node": "0.8.x || 0.10.x"
     }
 }
