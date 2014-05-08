@@ -1,13 +1,13 @@
 #TODO make mocha tests of httpClient
 rpc = require '../src/jrpc2.coffee'
 
-http = new rpc.httpTransport { uri: 'http://localhost:8080/' }
+http = new rpc.httpTransport { port: 8080, hostname: 'localhost' }
 client = new rpc.client http
 
-client.call 'users.auth', ["admin", "swd"], (err, raw) ->
+client.call 'users.auth', {password: "swd", login: "admin" }, (err, raw) ->
   console.log err, raw
 
-client.call 'users.auth', {password: "pass", login: "user"}, (err, raw) ->
+client.call 'users.auth', ["user", "pass"], (err, raw) ->
   console.log err, raw
 
 methods = [

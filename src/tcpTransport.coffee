@@ -4,12 +4,13 @@ class tcpTransport
 
   constructor: (@params) ->
 
+  #TODO rewrite for keep connecting between requests
   send: (body, callback) ->
     client = net.connect @params, ->
       client.write body
     client.on 'data', (data) ->
       callback null, data.toString()
-      client.end() #TODO make it optional - close or not connection
+      client.end()
 
   listen: (server) ->
     tcp = net.createServer (socket) ->

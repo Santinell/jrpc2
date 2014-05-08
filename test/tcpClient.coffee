@@ -4,10 +4,10 @@ rpc = require '../src/jrpc2.coffee'
 tcp = new rpc.tcpTransport { port: 9000 }
 client = new rpc.client tcp
 
-client.call 'users.auth', ["admin", "swd"], (err, raw) ->
+client.call 'users.auth', {password: "swd", login: "admin" }, (err, raw) ->
   console.log err, raw
 
-client.call 'users.auth', {login: "user", password: "pass"}, (err, raw) ->
+client.call 'users.auth', ["user", "pass"], (err, raw) ->
   console.log err, raw
 
 methods = [

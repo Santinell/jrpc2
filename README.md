@@ -7,7 +7,9 @@ JSON-RPC 2.0 library with support of batches and named parameters
 INSTALL
 =====
 
+```bash
 npm install jrpc2
+```
 
 EXAMPLES
 =====
@@ -45,17 +47,17 @@ module.exports = users
 Client example on coffee:
 
 ```coffeescript
-rpc = require '../src/jrpc2.coffee'
+rpc = require 'jrpc2'
 
 http = new rpc.httpTransport { uri: 'http://localhost:8080/' }
 client = new rpc.client http
 
-#single call with positional parameters
-client.call 'users.auth', ["admin", "swd"], (err, raw) ->
+#single call with named parameters
+client.call 'users.auth', {password: "swd", login: "admin" }, (err, raw) ->
   console.log err, raw
 
-#single call with named parameters
-client.call 'users.auth', {password: "pass", login: "user"}, (err, raw) ->
+#single call with positional parameters
+client.call 'users.auth', ["user", "pass"], (err, raw) ->
   console.log err, raw
 
 #methods and parameters for batch call

@@ -1,36 +1,33 @@
-#TODO rewrite without request and express modules
-request = require 'request'
-express = require 'express'
-app = express()
+http = require 'http'
 
 class httpTransport
 
   constructor: (@params) ->
 
   send: (body, callback) ->
-    opts =
-      method: 'POST'
-      uri: @params.uri
-      body: body
-    request opts, (err,res,raw) ->
-      callback err, raw
+    options = @params
+    options.method = 'POST'
+    req = http.request options, (res) ->
+      data = ""
+      res.on 'data', (chunk) -> data += chunk
+      res.on 'end', -> callback null, data
+      res.on 'error', (e) -> callback e, null
+    req.write(body);
+    req.end()
+
 
   listen: (server) ->
 
-    app.use (req, res, next) ->
+    (http.createServer (req, res) ->
       data = ""
-      req.on 'data', (chunk)-> data += chunk
+      req.on 'data', (chunk) -> data += chunk
       req.on 'end', ->
-        req.rawBody = data
-        next()
-
-    app.post '/', (req, res) ->
-      #console.log req.rawBody
-      server.handleRequest req.rawBody, (answer) ->
-        #console.log answer
-        res.set 'Content-Type', 'application/json'
-        res.send JSON.stringify(answer)
-        res.end()
-    app.listen @params.port
+        #console.log data
+        server.handleRequest data, (answer) ->
+          #console.log answer
+          res.writeHead 200, {'Content-Type': 'application/json'}
+          res.write JSON.stringify(answer)
+          res.end()
+    ).listen @params.port
 
 module.exports = httpTransport

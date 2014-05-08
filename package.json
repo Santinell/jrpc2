@@ -19,9 +19,7 @@
     ],
     "readmeFilename": "README.md",
     "dependencies": {
-        "async": "*",
-        "express": "*",
-        "request": "*"
+        "async": "*"
     },
     "repository": {
         "type": "git",
