@@ -30,7 +30,7 @@ class server
       if (!err)
         for moduleFile in modules
           module = require modulesDir + moduleFile
-          moduleName = moduleFile.replace('.coffee', '')
+          moduleName = moduleFile.replace('.coffee', '').replace('.js', '')
           @exposeModule moduleName, module
       if callback
         callback()
