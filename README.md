@@ -29,7 +29,7 @@ server.loadModules __dirname+'/modules/', ->
 It's very simple way to load modules. Just put in in one directory.
 Example of 'users' module:
 
-```
+```coffeescript
 users = {
 
   auth: (login, password) ->
@@ -49,7 +49,7 @@ Client example on coffee:
 ```coffeescript
 rpc = require 'jrpc2'
 
-http = new rpc.httpTransport { uri: 'http://localhost:8080/' }
+http = new rpc.httpTransport { port: 8080, hostname: 'localhost' }
 client = new rpc.client http
 
 #single call with named parameters
