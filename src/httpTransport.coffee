@@ -1,5 +1,5 @@
 http = require 'http'
-#TODO: add support of websocket
+
 class httpTransport
 
   constructor: (@params) ->
@@ -17,16 +17,18 @@ class httpTransport
 
   listen: (server) ->
 
-    (http.createServer (req, res) ->
+    httpServer = http.createServer (req, res) ->
       data = ""
       req.on 'data', (chunk) -> data += chunk
       req.on 'end', ->
         server.handleRequest data, (answer) ->
-          console.log data
-          console.log JSON.stringify answer
+          #console.log data
+          #console.log JSON.stringify answer
           res.writeHead 200, {'Content-Type': 'application/json'}
           res.write JSON.stringify answer
           res.end()
-    ).listen @params.port
+
+    httpServer.listen @params.port
+
 
 module.exports = httpTransport

@@ -25,7 +25,7 @@ Server example:
 
   server.loadModules(__dirname + '/modules/', function() {
     var http = new rpc.httpTransport({ port: 8080 });
-    return http.listen(server);
+    http.listen(server);
   });
 ```
 
@@ -60,12 +60,12 @@ Client example:
     password: "swd",
     login: "admin"
   }, function(err, raw) {
-    return console.log(err, raw);
+    console.log(err, raw);
   });
 
   //single call with positional parameters
   client.call('users.auth', ["user", "pass"], function(err, raw) {
-    return console.log(err, raw);
+    console.log(err, raw);
   });
 
   //methods and parameters for batch call
@@ -75,7 +75,7 @@ Client example:
     ["admin", "wrong"]
   ]
   client.batch(methods, params, function(err, raw) {
-    return console.log(err, raw);
+    console.log(err, raw);
   });
 ```
 
