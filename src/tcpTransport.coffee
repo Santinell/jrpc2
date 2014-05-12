@@ -7,7 +7,7 @@ class tcpTransport
   #TODO rewrite for keep connecting between requests
   send: (body, callback) ->
     client = net.connect @params, ->
-      client.write body
+      client.write JSON.stringify body
     client.on 'data', (data) ->
       callback null, data.toString()
       client.end()
@@ -18,7 +18,7 @@ class tcpTransport
         #console.log data.toString()
         server.handleRequest data, (answer) ->
           #console.log answer
-          socket.write JSON.stringify(answer)
+          socket.write JSON.stringify answer
 
     tcp.listen @params.port
 

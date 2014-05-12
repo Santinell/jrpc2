@@ -1,7 +1,9 @@
 JRPC2
 =====
 
-JSON-RPC 2.0 library with support of batches and named parameters
+JSON-RPC 2.0 library with support of batches and named parameters.
+You can use http, https, tcp transport for your server and client.
+Support of WebSocket is planned
 
 
 INSTALL
@@ -14,61 +16,66 @@ npm install jrpc2
 EXAMPLES
 =====
 
-Server example on coffee:
+Server example:
 
-```coffeescript
-rpc = require 'jrpc2'
+```javascript
+  var rpc = require('jrpc2');
 
-server = new rpc.server
+  var server = new rpc.server;
 
-server.loadModules __dirname+'/modules/', ->
-  http = new rpc.httpTransport { port: 8080 }
-  http.listen server
+  server.loadModules(__dirname + '/modules/', function() {
+    var http = new rpc.httpTransport({ port: 8080 });
+    return http.listen(server);
+  });
 ```
 
-It's very simple way to load modules. Just put in in one directory.
+It's very simple way to load modules. Just put it in one directory.
 Example of 'users' module:
 
-```coffeescript
-users = {
+```javascript
+  var users = {
+    auth: function(login, password) {
+      if (login === 'admin' && password === 'swd') {
+        return 'Hello admin';
+      } else {
+        throw new Error('Wrong login or password');
+      }
+    }
+  };
 
-  auth: (login, password) ->
-    if login is 'admin' && password is 'swd'
-      return 'Hello admin'
-    else
-      throw new Error 'Wrong login or password'
-
-}
-
-module.exports = users
+  module.exports = users;
 ```
 
+Client example:
 
-Client example on coffee:
+```javascript
+  var rpc = require('jrpc2');
 
-```coffeescript
-rpc = require 'jrpc2'
+  var http = new rpc.httpTransport({ port: 8080, hostname: 'localhost' });
 
-http = new rpc.httpTransport { port: 8080, hostname: 'localhost' }
-client = new rpc.client http
+  var client = new rpc.client(http);
 
-#single call with named parameters
-client.call 'users.auth', {password: "swd", login: "admin" }, (err, raw) ->
-  console.log err, raw
+  //single call with named parameters
+  client.call('users.auth', {
+    password: "swd",
+    login: "admin"
+  }, function(err, raw) {
+    return console.log(err, raw);
+  });
 
-#single call with positional parameters
-client.call 'users.auth', ["user", "pass"], (err, raw) ->
-  console.log err, raw
+  //single call with positional parameters
+  client.call('users.auth', ["user", "pass"], function(err, raw) {
+    return console.log(err, raw);
+  });
 
-#methods and parameters for batch call
-methods = [
-  'users.auth',
-  'users.auth'
-]
-params = [
-  {login: "cozy", password: "causeBorn"},
-  ["admin", "wrong"]
-]
-client.batch methods, params, (err, raw) ->
-  console.log err, raw
+  //methods and parameters for batch call
+  var methods = ["users.auth",  "users.auth"]
+  var params = [
+    {login: "cozy", password: "causeBorn"},
+    ["admin", "wrong"]
+  ]
+  client.batch(methods, params, function(err, raw) {
+    return console.log(err, raw);
+  });
 ```
+

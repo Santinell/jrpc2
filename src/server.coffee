@@ -39,7 +39,7 @@ class server
     try
       requests = JSON.parse(json)
     catch error
-      return reply rpcError 'Invalid request'
+      return reply JSON.stringify rpcError.invalidRequest()
 
     batch = 1
     if requests not instanceof Array
@@ -49,11 +49,13 @@ class server
     calls = []
     for request in requests
       if !request.method
-        reply rpcError 'Invalid request', request.id
+        calls.push (callback) =>
+          return callback null, rpcError.invalidRequest request.id
         continue
 
       if !@methods[request.method]
-        reply rpcError 'Method not found', request.id
+        calls.push (callback) =>
+          return callback null, rpcError.methodNotFound request.id
         continue
 
       method = @methods[request.method]
@@ -64,7 +66,7 @@ class server
           try
             result = method.execute req.params
           catch error
-            return callback null, rpcError error.message, req.id
+            return callback null, rpcError.abstract error.message, -32099, req.id
 
           response =
             id: req.id || 0

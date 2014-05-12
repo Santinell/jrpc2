@@ -1,18 +1,17 @@
 http = require 'http'
-
+#TODO: add support of websocket
 class httpTransport
 
   constructor: (@params) ->
 
   send: (body, callback) ->
-    options = @params
-    options.method = 'POST'
-    req = http.request options, (res) ->
+    @params.method = 'POST'
+    req = http.request @params, (res) ->
       data = ""
       res.on 'data', (chunk) -> data += chunk
       res.on 'end', -> callback null, data
       res.on 'error', (e) -> callback e, null
-    req.write(body);
+    req.write JSON.stringify body
     req.end()
 
 
@@ -22,11 +21,11 @@ class httpTransport
       data = ""
       req.on 'data', (chunk) -> data += chunk
       req.on 'end', ->
-        #console.log data
         server.handleRequest data, (answer) ->
-          #console.log answer
+          console.log data
+          console.log JSON.stringify answer
           res.writeHead 200, {'Content-Type': 'application/json'}
-          res.write JSON.stringify(answer)
+          res.write JSON.stringify answer
           res.end()
     ).listen @params.port
 

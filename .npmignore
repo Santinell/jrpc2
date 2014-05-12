@@ -2,4 +2,6 @@
 node_modules
 src
 test
+examples
 publish.sh
+compile.sh
