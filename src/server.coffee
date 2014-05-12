@@ -39,7 +39,7 @@ class server
     try
       requests = JSON.parse(json)
     catch error
-      return reply JSON.stringify rpcError.invalidRequest()
+      return reply rpcError.invalidRequest()
 
     batch = 1
     if requests not instanceof Array

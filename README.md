@@ -2,7 +2,11 @@ JRPC2
 =====
 
 JSON-RPC 2.0 library with support of batches and named parameters.
+
+Simple loading of modules.
+
 You can use http, https, tcp transport for your server and client.
+
 Support of WebSocket is planned
 
 
@@ -25,12 +29,13 @@ Server example:
 
   server.loadModules(__dirname + '/modules/', function() {
     var http = new rpc.httpTransport({ port: 8080 });
-    return http.listen(server);
+    http.listen(server);
   });
 ```
 
 It's very simple way to load modules. Just put it in one directory.
-Example of 'users' module:
+
+Example of 'users' module (./modules/users.js in this example):
 
 ```javascript
   var users = {
@@ -60,12 +65,12 @@ Client example:
     password: "swd",
     login: "admin"
   }, function(err, raw) {
-    return console.log(err, raw);
+    console.log(err, raw);
   });
 
   //single call with positional parameters
   client.call('users.auth', ["user", "pass"], function(err, raw) {
-    return console.log(err, raw);
+    console.log(err, raw);
   });
 
   //methods and parameters for batch call
@@ -75,7 +80,7 @@ Client example:
     ["admin", "wrong"]
   ]
   client.batch(methods, params, function(err, raw) {
-    return console.log(err, raw);
+    console.log(err, raw);
   });
 ```
 
