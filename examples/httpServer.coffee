@@ -1,4 +1,3 @@
-#TODO make mocha tests of httpServer
 rpc = require '../src/jrpc2.coffee'
 
 server = new rpc.server
