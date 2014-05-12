@@ -2,7 +2,7 @@
     "author": "Santinell",
     "name": "jrpc2",
     "description": "JSON-RPC 2.0 library with support of batches and named parameters. Written on coffee-script.",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "main": "./lib/jrpc2.js",
     "keywords": [
         "json",
