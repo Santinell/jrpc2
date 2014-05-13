@@ -1,6 +1,6 @@
 rpc = require '../src/jrpc2.coffee'
 
-tcp = new rpc.tcpTransport { port: 9000 }
+tcp = new rpc.tcpTransport { port: 9000, host: 'localhost' }
 client = new rpc.client tcp
 
 client.call 'users.auth', {password: "swd", login: "admin" }, (err, raw) ->

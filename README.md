@@ -5,9 +5,7 @@ JSON-RPC 2.0 library with support of batches and named parameters.
 
 Simple loading of modules.
 
-You can use http, https, tcp transport for your server and client.
-
-Support of WebSocket is planned
+You can use http (including websocket), https, tcp transport for your server and client.
 
 
 INSTALL
@@ -61,10 +59,7 @@ Client example:
   var client = new rpc.client(http);
 
   //single call with named parameters
-  client.call('users.auth', {
-    password: "swd",
-    login: "admin"
-  }, function(err, raw) {
+  client.call('users.auth', { password: "swd", login: "admin" }, function(err, raw) {
     console.log(err, raw);
   });
 

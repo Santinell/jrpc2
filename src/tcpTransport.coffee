@@ -17,9 +17,10 @@ class tcpTransport
 
   listen: (server) ->
     tcpServer = net.createServer (socket) ->
+      socket.on 'error', -> socket.end()
       socket.on 'data', (data)->
-        #console.log data.toString()
         server.handleRequest data, (answer) ->
+          #console.log data.toString()
           #console.log answer
           socket.write JSON.stringify answer
     tcpServer.listen @params.port

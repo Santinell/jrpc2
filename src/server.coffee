@@ -50,12 +50,12 @@ class server
     for request in requests
       if !request.method
         calls.push (callback) =>
-          return callback null, rpcError.invalidRequest request.id
+          callback null, rpcError.invalidRequest request.id
         continue
 
       if !@methods[request.method]
         calls.push (callback) =>
-          return callback null, rpcError.methodNotFound request.id
+          callback null, rpcError.methodNotFound request.id
         continue
 
       method = @methods[request.method]
