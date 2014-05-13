@@ -5,7 +5,7 @@ JSON-RPC 2.0 library with support of batches and named parameters.
 
 Simple loading of modules.
 
-You can use http (including websocket), https, tcp transport for your server and client.
+You can use http, https, ws, wss, tcp protocols for your server and client.
 
 
 INSTALL

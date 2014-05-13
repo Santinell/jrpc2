@@ -1,12 +1,12 @@
-http = require 'http'
 
 class httpTransport
 
   constructor: (@params) ->
+    @http = if @params.ssl then require('https') else require('http')
 
   send: (body, callback) ->
     @params.method = 'POST'
-    req = http.request @params, (res) ->
+    req = @http.request @params, (res) ->
       data = ""
       res.on 'data', (chunk) ->
         data += chunk
@@ -18,8 +18,10 @@ class httpTransport
     req.end()
 
 
+
   listen: (server) ->
-    httpServer = http.createServer (req, res) ->
+
+    listener = (req, res) ->
       data = ""
       req.on 'data', (chunk) ->
         data += chunk
@@ -31,20 +33,20 @@ class httpTransport
           res.write JSON.stringify answer
           res.end()
 
+    if @params.ssl
+      httpServer = @http.createServer @params, listener
+    else
+      httpServer = @http.createServer listener
+
     if @params.websocket
-      websocket = require 'websocket-driver'
-      httpServer.on 'upgrade', (request, socket, body) ->
-        if not websocket.isWebSocket request
-          return
-        driver = websocket.http request
-        driver.io.write body
-        socket.pipe(driver.io).pipe socket
-        driver.messages.on 'data', (data) ->
+      WebSocketServer = require('ws').Server;
+      wss = new WebSocketServer({ server: httpServer });
+      wss.on 'connection', (wsConnect) ->
+        wsConnect.on 'message', (data) ->
           server.handleRequest data, (answer) ->
-            driver.text JSON.stringify answer
+            wsConnect.send JSON.stringify answer
             #console.log data
             #console.log JSON.stringify answer
-        driver.start()
 
     httpServer.listen @params.port
 

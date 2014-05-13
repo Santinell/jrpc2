@@ -4,9 +4,10 @@ fs = require 'fs'
 server = new rpc.server
 
 server.loadModules __dirname+'/modules/', ->
-  https = new rpc.httpsTransport
+  http = new rpc.httpTransport
     port: 8443
+    ssl: true
     key: fs.readFileSync  __dirname+'/keys/ssl-key.pem'
     cert: fs.readFileSync  __dirname+'/keys/ssl-cert.pem'
-  https.listen server
+  http.listen server
 
