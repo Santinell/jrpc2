@@ -4,25 +4,28 @@ class client
 
   id: 0
 
-  request: (method, params) ->
-    @id++
-    return {
-      id: @id
+  request: (method, params, setId = true) ->
+    req = {
       method: method
       params: params
       jsonrpc: '2.0'
     }
+    if setId
+      req.id = ++@id
+    req
+
+  notify: (method, params = []) ->
+    req = @request method, params, false
+    @transport.send req
 
   batch: (methods, params, callback) ->
     req = []
     for method, i in methods
       req.push @request method, params[i]
-    #console.log req
     @transport.send req, callback
 
   call: (method, params, callback) ->
     req = @request method, params
-    #console.log req
     @transport.send req, callback
 
 

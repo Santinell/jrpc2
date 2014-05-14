@@ -7,12 +7,16 @@ class tcpTransport
   send: (body, callback) ->
     client = net.connect @params, ->
       client.write JSON.stringify body
-    client.on 'error', (e) -> callback e, null
+    client.on 'error', (e) ->
+      if callback
+        callback e, null
     client.on 'timeout', ->
-      callback new Error('TimeoutError'), null
+      if callback
+        callback new Error('TimeoutError'), null
       client.end()
     client.on 'data', (data) ->
-      callback null, data.toString()
+      if callback
+        callback null, data.toString()
       client.end()
 
   listen: (server) ->

@@ -10,9 +10,11 @@ class httpTransport
       res.on 'data', (chunk) ->
         data += chunk
       res.on 'end', ->
-        callback null, data
+        if callback
+          callback null, data
       res.on 'error', (e) ->
-        callback e, null
+        if callback
+          callback e, null
     req.write JSON.stringify body
     req.end()
 

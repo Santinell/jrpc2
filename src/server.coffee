@@ -25,8 +25,7 @@ class server
   expose: (name, func) ->
     @methods[name] = func
 
-
-  checkAuth: (method, params) ->
+  checkAuth: (method, params, headers) ->
     true
 
   loadModules: (modulesDir, callback) ->
@@ -44,6 +43,15 @@ class server
       requests = JSON.parse(json)
     catch error
       return reply rpcError.invalidRequest()
+
+    if requests not instanceof Array && !requests.id #only for single notification
+      if @methods[requests.method]
+        method = @methods[requests.method]
+        try
+          method.execute requests.params
+        finally
+          #nothing there
+      return
 
     batch = 1
     if requests not instanceof Array
@@ -82,15 +90,16 @@ class server
               return callback null, error #if method throw rpcError
 
           response =
-            id: req.id || 0
             jsonrpc: '2.0'
             result: result || null
+          if req.id
+            response.id = req.id
 
-          callback null, response
-      )(request)
+          callback null, response)(request)
 
     async.parallel calls, (err, response) ->
-      #TODO handle errors in err
+      if err
+        return reply undefined
       if !batch && response instanceof Array
         response = response[0]
       reply response
