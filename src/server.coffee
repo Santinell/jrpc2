@@ -44,22 +44,29 @@ class server
     catch error
       return reply rpcError.invalidRequest()
 
-    if requests not instanceof Array && !requests.id #only for single notification
-      if @methods[requests.method]
-        method = @methods[requests.method]
+    handleNotification = (request) =>
+      res = @checkAuth(request.method, request.params, headers)
+      if res is true && request.method && @methods[request.method]
+        method = @methods[request.method]
         try
-          method.execute requests.params
+          method.execute request.params
         finally
           #nothing there
-      return
 
     batch = 1
     if requests not instanceof Array
+      if !requests.id #for single notification
+        handleNotification requests
+        return reply null
       requests = [requests]
       batch = 0
 
     calls = []
     for request in requests
+      if !request.id #for notification in batch
+        handleNotification request
+        continue
+
       if !request.method
         calls.push (callback) =>
           callback null, rpcError.invalidRequest request.id
@@ -70,16 +77,14 @@ class server
           callback null, rpcError.methodNotFound request.id
         continue
 
-      method = @methods[request.method]
-
       res = @checkAuth(request.method, request.params, headers)
       if res is not true
         calls.push (callback) =>
           callback null, rpcError.abstract "AccessDenied", -32000, request.id
         continue
 
-      ((req) ->
-        calls.push (callback) =>
+      ((req, method) ->
+        calls.push (callback) ->
           result = null
           try
             result = method.execute req.params
@@ -95,11 +100,11 @@ class server
           if req.id
             response.id = req.id
 
-          callback null, response)(request)
+          callback null, response)(request, @methods[request.method])
 
     async.parallel calls, (err, response) ->
-      if err
-        return reply undefined
+      if response.length is 0
+        return reply null
       if !batch && response instanceof Array
         response = response[0]
       reply response

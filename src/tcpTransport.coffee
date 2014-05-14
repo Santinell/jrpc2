@@ -26,7 +26,8 @@ class tcpTransport
         server.handleRequest data, {}, (answer) ->
           #console.log data.toString()
           #console.log answer
-          socket.write JSON.stringify answer
+          if answer
+            socket.write JSON.stringify answer
     tcpServer.listen @params.port
 
 

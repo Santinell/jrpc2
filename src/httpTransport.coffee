@@ -3,6 +3,14 @@ class httpTransport
   constructor: (@params) ->
     @http = if @params.ssl then require('https') else require('http')
 
+  setHeader: (name, value) ->
+    if !@params.headers
+      @params.headers = {}
+    @params.headers[name] = value;
+
+  removeHeader: (name) ->
+    delete @params.headers[name]
+
   send: (body, callback) ->
     @params.method = 'POST'
     req = @http.request @params, (res) ->
@@ -28,10 +36,11 @@ class httpTransport
         data += chunk
       req.on 'end', ->
         server.handleRequest data, req.headers, (answer) ->
-          #console.log data
+          #console.log data, req.headers
           #console.log JSON.stringify answer
-          res.writeHead 200, {'Content-Type': 'application/json'}
-          res.write JSON.stringify answer
+          if answer
+            res.writeHead 200, {'Content-Type': 'application/json'}
+            res.write JSON.stringify answer
           res.end()
 
     if @params.ssl
