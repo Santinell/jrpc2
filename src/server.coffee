@@ -25,6 +25,10 @@ class server
   expose: (name, func) ->
     @methods[name] = func
 
+
+  checkAuth: (method, params) ->
+    true
+
   loadModules: (modulesDir, callback) ->
     fs.readdir modulesDir, (err, modules) =>
       if (!err)
@@ -35,7 +39,7 @@ class server
       if callback
         callback()
 
-  handleRequest: (json, reply) ->
+  handleRequest: (json, headers, reply) ->
     try
       requests = JSON.parse(json)
     catch error
@@ -60,13 +64,22 @@ class server
 
       method = @methods[request.method]
 
+      res = @checkAuth(request.method, request.params, headers)
+      if res is not true
+        calls.push (callback) =>
+          callback null, rpcError.abstract "AccessDenied", -32000, request.id
+        continue
+
       ((req) ->
         calls.push (callback) =>
           result = null
           try
             result = method.execute req.params
           catch error
-            return callback null, rpcError.abstract error.message, -32099, req.id
+            if error instanceof Error
+              return callback null, rpcError.abstract error.message, -32099, req.id #if method throw common Error
+            else
+              return callback null, error #if method throw rpcError
 
           response =
             id: req.id || 0

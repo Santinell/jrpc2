@@ -1,4 +1,3 @@
-
 class httpTransport
 
   constructor: (@params) ->
@@ -26,7 +25,7 @@ class httpTransport
       req.on 'data', (chunk) ->
         data += chunk
       req.on 'end', ->
-        server.handleRequest data, (answer) ->
+        server.handleRequest data, req.headers, (answer) ->
           #console.log data
           #console.log JSON.stringify answer
           res.writeHead 200, {'Content-Type': 'application/json'}
@@ -43,10 +42,10 @@ class httpTransport
       wss = new WebSocketServer({ server: httpServer });
       wss.on 'connection', (wsConnect) ->
         wsConnect.on 'message', (data) ->
-          server.handleRequest data, (answer) ->
-            wsConnect.send JSON.stringify answer
+          server.handleRequest data, wsConnect.upgradeReq.headers, (answer) ->
             #console.log data
             #console.log JSON.stringify answer
+            wsConnect.send JSON.stringify answer
 
     httpServer.listen @params.port
 

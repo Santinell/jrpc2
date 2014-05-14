@@ -12,12 +12,7 @@ invalidRequest = (id = 0) ->
 methodNotFound = (id = 0) ->
   abstract 'MethodNotFound', -32601, id
 
-serverError = (id = 0) ->
-  abstract 'ServerError', -32000, id
-
-
 exports.abstract = abstract
 exports.parseError = parseError
 exports.invalidRequest = invalidRequest
 exports.methodNotFound = methodNotFound
-exports.serverError = serverError
