@@ -102,12 +102,12 @@ server.loadModules(__dirname + '/modules/', function() {
             if (method === 'users.auth') {//for methods that don't require authorization
                 return true;
             } else {
+                //there you can check session ID or login and password of basic auth in headers. And check whether the user has access to that method
                 if (!app.user) {
-                    //there you can check session ID or login and password of basic auth in headers. And check whether the user has access to that method
                     cookies = url.parse('?' + (headers.cookie || ''), true).query;
-                    var sessionId = cookies.sessionId || '';
+                    var sessionID = cookies.sessionID || '';
                     var usersCollection = db.collection('users');
-                    app.user = usersCollection.findOne({session_id: sessionId});
+                    app.user = usersCollection.findOne({session_id: sessionID});
                     if (!app.user) //user not found
                         return false;
                 }
@@ -120,12 +120,12 @@ server.loadModules(__dirname + '/modules/', function() {
                     return false;
             }
         }
+        //There we set context
         server.context = app;
         https.listen(server);
     });
 
 });
-
 ```
 
 And now you can use context in your modules:
@@ -141,4 +141,23 @@ And now you can use context in your modules:
   module.exports = logs;
 ```
 
+Https client with auth and notification:
 
+```javascript
+  var rpc = require('jrpc2');
+
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; //ignore self-signed sertificate, remove for production
+
+  var https = new rpc.httpTransport({ port: 8443, hostname: 'localhost', ssl: true });
+  var client = new rpc.client(https);
+
+  client.call('users.auth', { password: "swd", login: "admin" }, function(err, raw) {
+    var obj = JSON.parse(raw);
+    if (obj.error) {
+        console.log(obj.error.description);
+    } else { //successful auth
+      http.setHeader('Cookie', 'sessionID=' + obj.result.sessionID);
+      client.notify('logs.userLogout', { timeOnSite: 364, lastPage: '/price' });
+    }
+  });
+```
