@@ -2,7 +2,7 @@ fs = require 'fs'
 async = require 'async'
 rpcError = require('./rpcError.coffee')
 
-Function::execute = (scope, argsList) ->
+Function::execute = (scope, argsList = []) ->
   if argsList instanceof Array
     this.apply scope, argsList
   else
@@ -51,7 +51,7 @@ class server
       if res is true && request.method && @methods[request.method]
         method = @methods[request.method]
         try
-          result = method.execute @context, request.params
+          method.execute @context, request.params
         finally
           #nothing there
 
