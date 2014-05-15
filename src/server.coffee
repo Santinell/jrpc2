@@ -40,20 +40,34 @@ class server
       if callback
         callback()
 
+
   handleRequest: (json, headers, reply) ->
     try
       requests = JSON.parse(json)
     catch error
       return reply rpcError.invalidRequest()
 
+
+    checkRequestFields = (request) ->
+      res = true
+      if !request.method
+        res = false
+      if !request.jsonrpc
+        res = false
+      if request.jsonrpc != '2.0'
+        res = false
+      res
+
     handleNotification = (request) =>
-      res = @checkAuth(request.method, request.params, headers)
-      if res is true && request.method && @methods[request.method]
-        method = @methods[request.method]
-        try
-          method.execute @context, request.params
-        finally
-          #nothing there
+      check1 = checkRequestFields request
+      if check1 is true && @methods[request.method]
+        check2 = @checkAuth(request.method, request.params, headers)
+        if check2 is true
+          method = @methods[request.method]
+          try
+            method.execute @context, request.params
+          finally
+            #nothing there
 
     batch = 1
     if requests not instanceof Array
@@ -62,14 +76,22 @@ class server
         return reply null
       requests = [requests]
       batch = 0
+    else if requests.length is 0
+      return reply rpcError.invalidRequest()
 
     calls = []
     for request in requests
+      if request not instanceof Object
+        calls.push (callback) =>
+          callback null, rpcError.invalidRequest()
+        continue
+
       if !request.id #for notification in batch
         handleNotification request
         continue
 
-      if !request.method
+      check = checkRequestFields request
+      if check != true
         calls.push (callback) =>
           callback null, rpcError.invalidRequest request.id
         continue
@@ -80,17 +102,17 @@ class server
         continue
 
       res = @checkAuth(request.method, request.params, headers)
-      if res is not true
+      if res != true
         calls.push (callback) =>
           callback null, rpcError.abstract "AccessDenied", -32000, request.id
         continue
 
       ((req, server) ->
-        method = server.methods[request.method]
+        method = server.methods[req.method]
         calls.push (callback) ->
           result = null
           try
-            result = method.execute server.context, request.params
+            result = method.execute server.context, req.params
           catch error
             if error instanceof Error
               return callback null, rpcError.abstract error.message, -32099, req.id #if method throw common Error
@@ -102,7 +124,6 @@ class server
             result: result || null
           if req.id
             response.id = req.id
-
           callback null, response)(request, @)
 
     async.parallel calls, (err, response) ->

@@ -1,15 +1,15 @@
-abstract = (message, code = -32099, id = 0) ->
+abstract = (message, code = -32099, id = null) ->
   id: id
   jsonrpc: '2.0'
   error: { code: code, message: message }
 
-parseError = (id = 0) ->
+parseError = (id = null) ->
   abstract 'ParseError', -32700, id
 
-invalidRequest = (id = 0) ->
+invalidRequest = (id = null) ->
   abstract 'InvalidRequest', -32600, id
 
-methodNotFound = (id = 0) ->
+methodNotFound = (id = null) ->
   abstract 'MethodNotFound', -32601, id
 
 exports.abstract = abstract
