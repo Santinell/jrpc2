@@ -2,21 +2,23 @@ fs = require 'fs'
 async = require 'async'
 rpcError = require('./rpcError.coffee')
 
-Function::execute = ->
-  if arguments[0] instanceof Array
-    this.apply null, arguments[0]
+Function::execute = (scope, argsList) ->
+  if argsList instanceof Array
+    this.apply scope, argsList
   else
     args = this.toString().match(/function[^(]*\(([^)]*)\)/)[1].split(/,\s*/)
-    named_params = arguments[0]
-    params = [].slice.call arguments, 0, -1
+    params = [].slice.call argsList, 0, -1
     if params.length < args.length
       for arg in args
-        params.push named_params[arg]
-    this.apply(null, params)
+        params.push argsList[arg]
+    this.apply(scope, params)
 
 class server
 
   methods: {}
+
+  constructor: () ->
+    @context = @
 
   exposeModule: (name, module) ->
     for method of module
@@ -49,7 +51,7 @@ class server
       if res is true && request.method && @methods[request.method]
         method = @methods[request.method]
         try
-          method.execute request.params
+          result = method.execute @context, request.params
         finally
           #nothing there
 
@@ -83,11 +85,12 @@ class server
           callback null, rpcError.abstract "AccessDenied", -32000, request.id
         continue
 
-      ((req, method) ->
+      ((req, server) ->
+        method = server.methods[request.method]
         calls.push (callback) ->
           result = null
           try
-            result = method.execute req.params
+            result = method.execute server.context, request.params
           catch error
             if error instanceof Error
               return callback null, rpcError.abstract error.message, -32099, req.id #if method throw common Error
@@ -100,7 +103,7 @@ class server
           if req.id
             response.id = req.id
 
-          callback null, response)(request, @methods[request.method])
+          callback null, response)(request, @)
 
     async.parallel calls, (err, response) ->
       if response.length is 0

@@ -2,7 +2,7 @@
     "author": "Santinell",
     "name": "jrpc2",
     "description": "JSON-RPC 2.0 library with support of batches and named parameters. Simple loading of modules. You can use http, https, ws, wss, tcp protocols for your server and client.",
-    "version": "0.1.9",
+    "version": "0.2.0",
     "main": "./lib/jrpc2.js",
     "keywords": [
         "json",
@@ -35,7 +35,9 @@
         "url": "git://github.com/Santinell/jrpc2.git"
     },
     "devDependencies": {
-        "coffee-script": "*"
+        "coffee-script": "*",
+        "mocha": "*",
+        "chai": "*"
     },
     "homepage": "https://github.com/Santinell/jrpc2",
     "engines": {

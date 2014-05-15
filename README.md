@@ -26,7 +26,7 @@ Server example:
   var server = new rpc.server;
 
   server.loadModules(__dirname + '/modules/', function() {
-    var http = new rpc.httpTransport({ port: 8080 });
+    var http = new rpc.httpTransport({ port: 8080, websocket: true });
     http.listen(server);
   });
 ```
@@ -54,6 +54,7 @@ Client example:
 ```javascript
   var rpc = require('jrpc2');
 
+  //for https set parameter ssl: true
   var http = new rpc.httpTransport({ port: 8080, hostname: 'localhost' });
 
   var client = new rpc.client(http);
@@ -69,13 +70,74 @@ Client example:
   });
 
   //methods and parameters for batch call
-  var methods = ["users.auth",  "users.auth"]
+  var methods = ["users.auth",  "users.auth"];
   var params = [
     {login: "cozy", password: "causeBorn"},
     ["admin", "wrong"]
-  ]
+  ];
   client.batch(methods, params, function(err, raw) {
     console.log(err, raw);
   });
 ```
+
+
+Complex example of https server with checkAuth and change of context:
+(This is schematic example, so i don't test it)
+```javascript
+
+var rpc = require('jrpc2');
+var url = require('url');
+var mongo = require('mongodb').MongoClient;
+var server = new rpc.server();
+
+server.loadModules(__dirname + '/modules/', function() {
+    var https = new rpc.httpTransport({ port: 8443, ssl: true });
+    mongo.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
+        var app = {};
+        app.mongo = mongo;
+        app.db = db;
+        server.checkAuth = function(method, params, headers) {
+            var cookies;
+            if (method === 'users.auth') {//for methods that don't require authorization
+                return true;
+            } else {
+                if (!app.user) {
+                    //there you can check session ID or login and password of basic auth in headers. And check whether the user has access to that method
+                    cookies = url.parse('?' + (headers.cookie || ''), true).query;
+                    var sessionId = cookies.sessionId || '';
+                    var usersCollection = db.collection('users');
+                    app.user = usersCollection.findOne({session_id: sessionId});
+                    if (!app.user) //user not found
+                        return false;
+                }
+                //check permissions
+                var permissionsCollection = db.collection('permissions');
+                access = permissionsCollection.findOne({role: app.user.role, method: method});
+                if (access)
+                    return true;
+                else
+                    return false;
+            }
+        }
+        server.context = app;
+        https.listen(server);
+    });
+
+});
+
+```
+
+And now you can use context in your modules:
+
+```javascript
+  var logs = {
+    userLogout: function(timeOnSite, lastPage) {
+        var logsCollection = this.db.collection('logs'); //this.db from context of app
+        logsCollection.insert({userId: this.user.userId, time: timeOnSite, lastPage: lastPage}, ); //this.user from context of app
+    }
+  };
+
+  module.exports = logs;
+```
+
 

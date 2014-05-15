@@ -8,8 +8,6 @@ client = new rpc.client http
 client.call 'users.auth', ["user", "pass"], (err, raw) ->
   console.log err, raw
 
-client.notify 'logs.userLogout', {timeOnSite: 364, lastPage: '/price'}
-
 methods = ['users.auth', 'users.auth']
 params = [
   {login: "cozy", password: "causeBorn"},
