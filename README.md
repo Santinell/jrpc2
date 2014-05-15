@@ -92,7 +92,12 @@ var mongo = require('mongodb').MongoClient;
 var server = new rpc.server();
 
 server.loadModules(__dirname + '/modules/', function() {
-    var https = new rpc.httpTransport({ port: 8443, ssl: true });
+    var https = new rpc.httpTransport({
+      port: 8443,
+      ssl: true,
+      key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'),
+      cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')
+    });
     mongo.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
         var app = {};
         app.mongo = mongo;
