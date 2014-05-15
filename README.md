@@ -82,6 +82,7 @@ Client example:
 
 
 Complex example of https server with checkAuth and change of context:
+
 (This is schematic example, so i don't test it)
 ```javascript
 
