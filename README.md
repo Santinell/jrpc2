@@ -7,6 +7,8 @@ Simple loading of modules.
 
 You can use http, https, ws, wss, tcp protocols for your server and client.
 
+Extend your method's scope by change context of server.
+
 
 INSTALL
 =====
