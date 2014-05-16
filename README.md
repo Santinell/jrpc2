@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/Santinell/jrpc2.svg?branch=master)](https://travis-ci.org/Santinell/jrpc2)
+[![Build Status](https://travis-ci.org/Santinell/jrpc2.svg?branch=master)](https://travis-ci.org/Santinell/jrpc2) [![Coverage Status](https://coveralls.io/repos/Santinell/jrpc2/badge.png)](https://coveralls.io/r/Santinell/jrpc2)
 
 JRPC2
 =====
@@ -7,7 +7,7 @@ JSON-RPC 2.0 library with support of batches and named parameters.
 
 Simple loading of modules.
 
-You can use http, https, ws, wss, tcp protocols for your server and client.
+You can use **HTTP**, **HTTPS**, **WebSocket**, **WebSocket Secure**, **TCP** protocols for your server and client.
 
 Extend your method's scope by change context of server.
 
@@ -58,7 +58,6 @@ Client example:
 ```javascript
   var rpc = require('jrpc2');
 
-  //for https set parameter ssl: true
   var http = new rpc.httpTransport({ port: 8080, hostname: 'localhost' });
 
   var client = new rpc.client(http);

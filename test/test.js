@@ -18,6 +18,7 @@ describe('Server', function () {
   it('should correct load modules from directory', function () {
     server.loadModules(__dirname + '/modules/', function () {
       server.methods.should.have.property('users.auth');
+      server.methods['users.auth'].should.be.an.instanceof(Function);
     });
   });
 
@@ -43,6 +44,7 @@ describe('Server', function () {
 
   it('should return correct results with new methods', function () {
     server.methods['sum'](14, 28).should.equal(42);
+    server.methods['sum'](21.4, 33.1).should.equal(54.5);
     server.methods['math.log'](10, 10).should.equal(1);
     server.methods['math.log'](10, Math.E).should.equal(2.302585092994046);
   });
