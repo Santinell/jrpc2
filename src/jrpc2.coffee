@@ -1,6 +1,6 @@
-exports.rpcError = require './rpcError.coffee'
-exports.server = require './server.coffee'
-exports.client = require './client.coffee'
+exports.rpcError = require './rpcError'
+exports.server = require './server'
+exports.client = require './client'
 
-exports.httpTransport = require './httpTransport.coffee'
-exports.tcpTransport = require './tcpTransport.coffee'
+exports.httpTransport = require './httpTransport'
+exports.tcpTransport = require './tcpTransport'

@@ -1,6 +1,6 @@
 fs = require 'fs'
 async = require 'async'
-rpcError = require('./rpcError.coffee')
+rpcError = require('./rpcError')
 
 Function::execute = (scope, argsList = []) ->
   if argsList instanceof Array
