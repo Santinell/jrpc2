@@ -101,17 +101,17 @@ server.loadModules(__dirname + '/modules/', function() {
       cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')
     });
     mongo.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
+        //this is our new context
         var app = {};
         app.mongo = mongo;
         app.db = db;
         server.checkAuth = function(method, params, headers) {
-            var cookies;
+            //there you can check session ID or login and password of basic auth in headers. And check whether the user has access to that method
             if (method === 'users.auth') {//for methods that don't require authorization
                 return true;
             } else {
-                //there you can check session ID or login and password of basic auth in headers. And check whether the user has access to that method
                 if (!app.user) {
-                    cookies = url.parse('?' + (headers.cookie || ''), true).query;
+                    var cookies = url.parse('?' + (headers.cookie || ''), true).query;
                     var sessionID = cookies.sessionID || '';
                     var usersCollection = db.collection('users');
                     app.user = usersCollection.findOne({session_id: sessionID});
@@ -140,8 +140,10 @@ And now you can use context in your modules:
 ```javascript
   var logs = {
     userLogout: function(timeOnSite, lastPage) {
-        var logsCollection = this.db.collection('logs'); //this.db from context of app
-        logsCollection.insert({userId: this.user.userId, time: timeOnSite, lastPage: lastPage}, ); //this.user from context of app
+        //this.db from context of app
+        var logsCollection = this.db.collection('logs');
+        //this.user from context of app
+        logsCollection.insert({userId: this.user.userId, time: timeOnSite, lastPage: lastPage});
     }
   };
 
