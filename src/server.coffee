@@ -47,7 +47,6 @@ class server
     catch error
       return reply rpcError.invalidRequest()
 
-
     checkRequestFields = (request) ->
       res = true
       if !request.method
@@ -71,9 +70,6 @@ class server
 
     batch = 1
     if requests not instanceof Array
-      if !requests.id #for single notification
-        handleNotification requests
-        return reply null
       requests = [requests]
       batch = 0
     else if requests.length is 0
@@ -86,7 +82,7 @@ class server
           callback null, rpcError.invalidRequest()
         continue
 
-      if !request.id #for notification in batch
+      if !request.id #for notifications
         handleNotification request
         continue
 
