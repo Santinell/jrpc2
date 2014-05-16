@@ -2,7 +2,7 @@
   "author": "Santinell",
   "name": "jrpc2",
   "description": "JSON-RPC 2.0 library with support of batches and named parameters. Simple loading of modules. You can use http, https, ws, wss, tcp protocols for your server and client. Extend your method's scope by change context of server.",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "main": "./lib/jrpc2.js",
   "keywords": [
     "json",
@@ -27,7 +27,7 @@
   ],
   "scripts": {
     "test": "mocha",
-    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec >/dev/null && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
   },
   "readmeFilename": "README.md",
   "dependencies": {

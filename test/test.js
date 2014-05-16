@@ -1,6 +1,12 @@
 var should = require('chai').should();
+var fs = require('fs');
+var url = require('url');
 
 var rpc = null;
+var server = null;
+var transport = null;
+var client = null;
+
 describe('RPC Core', function () {
   it('should have a Client, Server, rpcError and transports', function () {
     rpc = require('../lib/jrpc2.js');
@@ -9,7 +15,7 @@ describe('RPC Core', function () {
 });
 
 describe('Server', function () {
-  var server = null;
+
   it('should have context', function () {
     server = new rpc.server();
     server.should.have.property('context')
@@ -151,7 +157,6 @@ describe('Server', function () {
     server.handleRequest('[{"id": 1, "jsonrpc":"2.0", "method": "sum", "params": [13, 16] },{"jsonrpc":"2.0", "method": "console", "params": ["Test batch"]},{"id": 2, "jsonrpc":"2.0", "method": "math.log", "params": {"num":19,"base":8} }]', {}, callback);
   });
 
-  var url = require('url');
   it('should correct set checkAuth function', function () {
     server.checkAuth('', [], {}).should.equal(true);
     server.checkAuth = function (method, params, headers) {
@@ -201,5 +206,58 @@ describe('Server', function () {
     };
     server.handleRequest('{"id": 1, "jsonrpc":"2.0", "method": "sum", "params": [1, 5] }', {cookie: "sessionID=9037c4852fc3a3f452b1ee2b93150603"}, callback);
   });
+
+});
+
+describe('httpsTransport', function () {
+  it('should correct save params', function () {
+    transport = new rpc.httpTransport({
+      port: 8080,
+      ssl: true
+    });
+    transport.should.have.property('params');
+    transport.should.have.property('http');
+    transport.params.should.deep.equal({
+      port: 8080,
+      ssl: true
+    });
+  });
+
+  it('should throw error because of no key+cert', function () {
+    transport.listen.should.throw(Error);
+  });
+
+  it('should throw error because of no cert', function () {
+    transport.params.key = fs.readFileSync(__dirname + '/keys/ssl-key.pem');
+    transport.listen.should.throw(Error);
+  });
+
+  it('should throw error because of no server', function () {
+    transport.params.cert = fs.readFileSync(__dirname + '/keys/ssl-cert.pem');
+    transport.listen.should.throw(Error);
+  });
+
+  it('should success listen server', function () {
+    (function(){transport.listen(server)}).should.not.throw(Error);
+  });
+
+});
+
+describe('Client', function () {
+
+  it('should have transport and id', function () {
+    client = new rpc.client(transport);
+    client.should.have.property('transport');
+    client.should.have.property('id');
+    client.id.should.equal(0);
+    client.transport.should.not.equal(null);
+  });
+
+  it('should correct generate requests', function () {
+    client.request('sum',[1,"2",null]).should.deep.equal({id:1, jsonrpc:"2.0", method: "sum", params:[1,"2",null]});
+    client.request('console',{message: "Hello world!"}, false).should.deep.equal({jsonrpc:"2.0", method: "console", params:{message: "Hello world!"}});
+  });
+
+
 
 });
