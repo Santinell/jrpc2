@@ -1,5 +1,4 @@
 before_script:
-  coffee -c -o lib src
-  find lib/ -name "*.js" -exec sed -i 's/.coffee/.js/g' {} \;
+  coffee -c -o lib src && find lib/ -name "*.js" -exec sed -i 's/.coffee/.js/g' {} \;
 language: node_js
 node_js: 0.8
