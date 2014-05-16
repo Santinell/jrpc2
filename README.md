@@ -107,8 +107,9 @@ server.loadModules(__dirname + '/modules/', function() {
         var app = {};
         app.mongo = mongo;
         app.db = db;
+        //there you can check session ID or login and password of basic auth in headers.
+        //And check whether the user has access to that method
         server.checkAuth = function(method, params, headers) {
-            //there you can check session ID or login and password of basic auth in headers. And check whether the user has access to that method
             if (method === 'users.auth') {//for methods that don't require authorization
                 return true;
             } else {
@@ -157,7 +158,8 @@ Https client with auth and notification:
 ```javascript
   var rpc = require('jrpc2');
 
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; //ignore self-signed sertificate, remove for production
+  //ignore self-signed sertificate, remove for production
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
   var https = new rpc.httpTransport({ port: 8443, hostname: 'localhost', ssl: true });
   var client = new rpc.client(https);
