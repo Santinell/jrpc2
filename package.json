@@ -1,50 +1,53 @@
 {
-    "author": "Santinell",
-    "name": "jrpc2",
-    "description": "JSON-RPC 2.0 library with support of batches and named parameters. Simple loading of modules. You can use http, https, ws, wss, tcp protocols for your server and client. Extend your method's scope by change context of server.",
-    "version": "0.2.4",
-    "main": "./lib/jrpc2.js",
-    "keywords": [
-        "json",
-        "rpc",
-        "rpc2",
-        "json-rpc",
-        "json-rpc2",
-        "jsonrpc",
-        "jsonrpc2",
-        "server",
-        "client",
-        "tcp",
-        "http",
-        "https",
-        "websocket",
-        "ws",
-        "wss",
-        "notifications",
-        "batch",
-        "named",
-        "parameters"
-    ],
-    "scripts": {
-      "test": "mocha",
-      "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js | rm -rf ./coverage"
-    },
-    "readmeFilename": "README.md",
-    "dependencies": {
-        "async": "*",
-        "ws": "*"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/Santinell/jrpc2.git"
-    },
-    "devDependencies": {
-        "coffee-script": "*",
-        "mocha": "*",
-        "chai": "*"
-    },
-    "homepage": "https://github.com/Santinell/jrpc2",
-    "engines": {
-        "node": ">=0.8.0"
-    }
+  "author": "Santinell",
+  "name": "jrpc2",
+  "description": "JSON-RPC 2.0 library with support of batches and named parameters. Simple loading of modules. You can use http, https, ws, wss, tcp protocols for your server and client. Extend your method's scope by change context of server.",
+  "version": "0.2.4",
+  "main": "./lib/jrpc2.js",
+  "keywords": [
+    "json",
+    "rpc",
+    "rpc2",
+    "json-rpc",
+    "json-rpc2",
+    "jsonrpc",
+    "jsonrpc2",
+    "server",
+    "client",
+    "tcp",
+    "http",
+    "https",
+    "websocket",
+    "ws",
+    "wss",
+    "notifications",
+    "batch",
+    "named",
+    "parameters"
+  ],
+  "scripts": {
+    "test": "mocha",
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+  },
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "async": "*",
+    "ws": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Santinell/jrpc2.git"
+  },
+  "devDependencies": {
+    "coffee-script": "*",
+    "mocha": "*",
+    "chai": "*",
+    "coveralls": "*",
+    "istanbul": "*",
+    "mocha-lcov-reporter": "*"
+  },
+  "homepage": "https://github.com/Santinell/jrpc2",
+  "engines": {
+    "node": ">=0.8.0"
+  }
 }
