@@ -25,6 +25,7 @@
         "named",
         "parameters"
     ],
+    "scripts": { "test": "mocha" },
     "readmeFilename": "README.md",
     "dependencies": {
         "async": "*",
