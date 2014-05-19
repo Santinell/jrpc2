@@ -3,6 +3,8 @@ net = require 'net'
 class tcpTransport
 
   constructor: (@params) ->
+    if !@params
+      throw new Error 'emptyParams'
 
   send: (body, callback) ->
     client = net.connect @params, ->

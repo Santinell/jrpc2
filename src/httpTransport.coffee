@@ -1,6 +1,8 @@
 class httpTransport
 
   constructor: (@params) ->
+    if !@params
+      throw new Error 'emptyParams'
     @http = if @params.ssl then require('https') else require('http')
 
   setHeader: (name, value) ->
