@@ -15,6 +15,45 @@ describe "RPC Core", ->
   it "should have a Client, Server, rpcError and transports", ->
     rpc.should.respondTo "server", "client", "httpTransport", "tcpTransport", "rpcError"
 
+
+describe "rpcError", ->
+  rpcError = rpc.rpcError
+
+  it "should have methods: abstract, parseError, invalidRequest, methodNotFound, invalidParams", ->
+    rpcError.should.respondTo "abstract", "parseError", "invalidRequest", "methodNotFound", "invalidParams"
+
+  it "should generate abstract error with defaults", ->
+    rpcError.abstract('Test').should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32099, message: "Test"}}
+
+  it "should generate abstract error with passed parameters", ->
+    rpcError.abstract('Rom', -32016, 42).should.deep.equal {id: 42, jsonrpc: "2.0", error: {code: -32016, message: "Rom"}}
+
+  it "should generate parseError", ->
+    rpcError.parseError(13).should.deep.equal {id: 13, jsonrpc: "2.0", error: {code: -32700, message: "ParseError"}}
+
+  it "should generate parseError with defaults", ->
+    rpcError.parseError().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32700, message: "ParseError"}}
+
+  it "should generate invalidRequest", ->
+    rpcError.invalidRequest(22).should.deep.equal {id: 22, jsonrpc: "2.0", error: {code: -32600, message: "InvalidRequest"}}
+
+  it "should generate invalidRequest with defaults", ->
+    rpcError.invalidRequest().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32600, message: "InvalidRequest"}}
+
+  it "should generate methodNotFound ", ->
+    rpcError.methodNotFound(64).should.deep.equal {id: 64, jsonrpc: "2.0", error: {code: -32601, message: "MethodNotFound"}}
+
+  it "should generate methodNotFound with defaults", ->
+    rpcError.methodNotFound().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32601, message: "MethodNotFound"}}
+
+  it "should generate invalidParams ", ->
+    rpcError.invalidParams(89).should.deep.equal {id: 89, jsonrpc: "2.0", error: {code: -32602, message: "InvalidParams"}}
+
+  it "should generate invalidParams with defaults", ->
+    rpcError.invalidParams().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32602, message: "InvalidParams"}}
+
+
+
 describe "Server", ->
 
   it "should have context", ->
@@ -200,6 +239,33 @@ describe "httpsServer", ->
 
 
 
+
+
+describe "tcpTransport", ->
+
+  it "should throw error because of no params", ->
+    (->
+      new rpc.tcpTransport
+    ).should.throw Error
+
+  it "should correct save params", ->
+    tcpTransport = new rpc.tcpTransport {}
+    tcpTransport.should.have.property "params"
+
+  it "should throw error because of no port", ->
+    tcpTransport.listen.should.throw Error
+
+  it "should throw error because of no server", ->
+    tcpTransport.params.port = 9000
+    tcpTransport.params.should.deep.equal {port: 9000}
+    tcpTransport.listen.should.throw Error
+
+  it "should success listen server", ->
+    (->
+      tcpTransport.listen server
+    ).should.not.throws Error
+
+
 describe "httpsClient", ->
 
   it "should throw error because of no transport", ->
@@ -244,65 +310,5 @@ describe "httpsClient", ->
 
 
 
-describe "tcpTransport", ->
 
-  it "should throw error because of no params", ->
-    (->
-      new rpc.tcpTransport
-    ).should.throw Error
-
-  it "should correct save params", ->
-    tcpTransport = new rpc.tcpTransport {}
-    tcpTransport.should.have.property "params"
-
-  it "should throw error because of no port", ->
-    tcpTransport.listen.should.throw Error
-
-  it "should throw error because of no server", ->
-    tcpTransport.params.port = 9000
-    tcpTransport.params.should.deep.equal {port: 9000}
-    tcpTransport.listen.should.throw Error
-
-  it "should success listen server", ->
-    (->
-      tcpTransport.listen server
-    ).should.not.throws Error
-
-
-
-describe "rpcError", ->
-  rpcError = rpc.rpcError
-
-  it "should have methods: abstract, parseError, invalidRequest, methodNotFound, invalidParams", ->
-    rpcError.should.respondTo "abstract", "parseError", "invalidRequest", "methodNotFound", "invalidParams"
-
-  it "should generate abstract error with defaults", ->
-    rpcError.abstract('Test').should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32099, message: "Test"}}
-
-  it "should generate abstract error with passed parameters", ->
-    rpcError.abstract('Rom', -32016, 42).should.deep.equal {id: 42, jsonrpc: "2.0", error: {code: -32016, message: "Rom"}}
-
-  it "should generate parseError", ->
-    rpcError.parseError(13).should.deep.equal {id: 13, jsonrpc: "2.0", error: {code: -32700, message: "ParseError"}}
-
-  it "should generate parseError with defaults", ->
-    rpcError.parseError().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32700, message: "ParseError"}}
-
-  it "should generate invalidRequest", ->
-    rpcError.invalidRequest(22).should.deep.equal {id: 22, jsonrpc: "2.0", error: {code: -32600, message: "InvalidRequest"}}
-
-  it "should generate invalidRequest with defaults", ->
-    rpcError.invalidRequest().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32600, message: "InvalidRequest"}}
-
-  it "should generate methodNotFound ", ->
-    rpcError.methodNotFound(64).should.deep.equal {id: 64, jsonrpc: "2.0", error: {code: -32601, message: "MethodNotFound"}}
-
-  it "should generate methodNotFound with defaults", ->
-    rpcError.methodNotFound().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32601, message: "MethodNotFound"}}
-
-  it "should generate invalidParams ", ->
-    rpcError.invalidParams(89).should.deep.equal {id: 89, jsonrpc: "2.0", error: {code: -32602, message: "InvalidParams"}}
-
-  it "should generate invalidParams with defaults", ->
-    rpcError.invalidParams().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32602, message: "InvalidParams"}}
 
