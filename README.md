@@ -138,7 +138,12 @@ server.loadModules(__dirname + '/modules/', function() {
 ```
 
 And now you can use context in your modules:
-
+it('should correct load modules from directory', function () {
+    server.loadModules(__dirname + '/modules/', function () {
+      server.methods.should.have.property('users.auth');
+      server.methods['users.auth'].should.be.an.instanceof(Function);
+    });
+  });
 ```javascript
   var logs = {
     userLogout: function(timeOnSite, lastPage) {
@@ -168,7 +173,7 @@ Https client with auth and notification:
     if (obj.error) {
         console.log(obj.error.description);
     } else { //successful auth
-      http.setHeader('Cookie', 'sessionID=' + obj.result.sessionID);
+      https.setHeader('Cookie', 'sessionID=' + obj.result.sessionID);
       client.notify('logs.userLogout', { timeOnSite: 364, lastPage: '/price' });
     }
   });
