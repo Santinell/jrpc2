@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/Santinell/jrpc2.svg?branch=master)](https://travis-ci.org/Santinell/jrpc2) [![Coverage Status](https://coveralls.io/repos/Santinell/jrpc2/badge.png)](https://coveralls.io/r/Santinell/jrpc2)
 
+![NPM Info](https://nodei.co/npm/jrpc2.png?downloads=true)
+
 JRPC2
 =====
 

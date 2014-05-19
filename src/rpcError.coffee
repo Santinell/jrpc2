@@ -12,7 +12,11 @@ invalidRequest = (id = null) ->
 methodNotFound = (id = null) ->
   abstract 'MethodNotFound', -32601, id
 
+invalidParams = (id = null) ->
+  abstract 'InvalidParams', -32602, id
+
 exports.abstract = abstract
 exports.parseError = parseError
 exports.invalidRequest = invalidRequest
 exports.methodNotFound = methodNotFound
+exports.invalidParams = invalidParams

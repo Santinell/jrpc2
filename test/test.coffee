@@ -1,17 +1,14 @@
 should = require("chai").should()
 fs = require("fs")
 url = require("url")
-rpc = null
+rpc = require "../lib/jrpc2"
 server = null
 transport = null
 client = null
 
 describe "RPC Core", ->
   it "should have a Client, Server, rpcError and transports", ->
-    rpc = require("../lib/jrpc2.js")
     rpc.should.respondTo "server", "client", "httpTransport", "tcpTransport", "rpcError"
-
-
 
 describe "Server", ->
   it "should have context", ->
@@ -175,6 +172,14 @@ describe "httpsTransport", ->
     transport.params.cert = fs.readFileSync(__dirname + "/keys/ssl-cert.pem")
     transport.listen.should.throw Error
 
+  it "should success set header", ->
+    transport.setHeader('test','value-612');
+    transport.params.headers.should.deep.equal {test: 'value-612'}
+
+  it "should success remove header", ->
+    transport.removeHeader('test');
+    transport.params.headers.should.deep.equal {}
+
   it "should success listen server", ->
     (->
       transport.listen server
@@ -193,3 +198,24 @@ describe "Client", ->
   it "should correct generate requests", ->
     client.request("sum", [1,"2",null]).should.deep.equal {id:1, jsonrpc:"2.0", method: "sum", params:[1,"2",null]}
     client.request("console", { message: "Hello world!" }, false).should.deep.equal {jsonrpc:"2.0", method: "console", params:{message: "Hello world!"}}
+
+
+describe "rpcError", ->
+  rpcError = rpc.rpcError
+  it "should generate abstract error with defaults", ->
+    rpcError.abstract('Test').should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32099, message: "Test"}}
+
+  it "should generate abstract error with passed parameters", ->
+    rpcError.abstract('Rom',-32016, 42).should.deep.equal {id: 42, jsonrpc: "2.0", error: {code: -32016, message: "Rom"}}
+
+  it "should generate parseError ", ->
+    rpcError.parseError(13).should.deep.equal {id: 13, jsonrpc: "2.0", error: {code: -32700, message: "ParseError"}}
+
+  it "should generate invalidRequest ", ->
+    rpcError.invalidRequest(22).should.deep.equal {id: 22, jsonrpc: "2.0", error: {code: -32600, message: "InvalidRequest"}}
+
+  it "should generate methodNotFound ", ->
+    rpcError.methodNotFound(64).should.deep.equal {id: 64, jsonrpc: "2.0", error: {code: -32601, message: "MethodNotFound"}}
+
+  it "should generate invalidParams ", ->
+    rpcError.invalidParams(89).should.deep.equal {id: 89, jsonrpc: "2.0", error: {code: -32602, message: "InvalidParams"}}
