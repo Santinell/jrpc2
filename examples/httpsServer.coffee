@@ -1,15 +1,15 @@
-rpc = require '../src/jrpc2.coffee'
+rpc = require '../src/jrpc2'
 fs = require 'fs'
 url = require 'url'
 
 server = new rpc.server
 
-server.loadModules __dirname+'/modules/', ->
+server.loadModules __dirname+'/../test/modules/', ->
   https = new rpc.httpTransport
     port: 8443
     ssl: true
-    key: fs.readFileSync __dirname+'/keys/ssl-key.pem'
-    cert: fs.readFileSync __dirname+'/keys/ssl-cert.pem'
+    key: fs.readFileSync __dirname+'/../test/keys/ssl-key.pem'
+    cert: fs.readFileSync __dirname+'/../test/keys/ssl-cert.pem'
 
   server.checkAuth = (method, params, headers) ->
     if method is 'users.auth' #methods that don't require authorization

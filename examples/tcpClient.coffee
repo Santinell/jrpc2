@@ -1,4 +1,4 @@
-rpc = require '../src/jrpc2.coffee'
+rpc = require '../src/jrpc2'
 
 tcp = new rpc.tcpTransport { port: 9000, host: 'localhost' }
 client = new rpc.client tcp

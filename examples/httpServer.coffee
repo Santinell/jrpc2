@@ -1,8 +1,9 @@
-rpc = require '../src/jrpc2.coffee'
+rpc = require '../src/jrpc2'
 
 server = new rpc.server
 
-server.loadModules __dirname+'/modules/', ->
-  http = new rpc.httpTransport { port: 8080, websocket: true }
-  http.listen server
+server.expose 'sum', (a,b) ->  a+b
+
+http = new rpc.httpTransport { port: 8080, websocket: true }
+http.listen server
 

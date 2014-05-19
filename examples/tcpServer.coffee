@@ -1,4 +1,4 @@
-rpc = require '../src/jrpc2.coffee'
+rpc = require '../src/jrpc2'
 
 server = new rpc.server
 

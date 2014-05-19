@@ -1,10 +1,14 @@
 should = require("chai").should()
 fs = require("fs")
 url = require("url")
-rpc = require "../lib/jrpc2"
+rpc = require "../src/jrpc2"
 server = null
-transport = null
+httpsTransport = null
+tcpTransport = null
 client = null
+sessionId = "9037c4852fc3a3f452b1ee2b93150603"
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 describe "RPC Core", ->
 
@@ -20,6 +24,7 @@ describe "Server", ->
   it "should correct load modules from directory", ->
     server.loadModules __dirname + "/modules/", ->
       server.methods.should.have.property "users.auth"
+      server.methods.should.have.property "logs.userLogout"
       server.methods["users.auth"].should.be.an.instanceof Function
 
   it "should have success function expose", ->
@@ -125,7 +130,6 @@ describe "Server", ->
         sessionID is "9037c4852fc3a3f452b1ee2b93150603"
     server.checkAuth("", [], {}).should.not.equal true
 
-  sessionId = "9037c4852fc3a3f452b1ee2b93150603"
   it "should return sessionId with right login and password", ->
     callback = (result) ->
       result.should.deep.equal {id: 1, jsonrpc: '2.0', result: {sessionID: sessionId}}
@@ -152,12 +156,12 @@ describe "Server", ->
     callback = (result) ->
       result.should.deep.equal {id: 1, jsonrpc: '2.0', result: 6}
     server.handleRequest '{"id": 1, "jsonrpc":"2.0", "method": "sum", "params": [1, 5] }',
-      cookie: "sessionID=9037c4852fc3a3f452b1ee2b93150603"
+      cookie: "sessionID="+sessionId
     , callback
 
 
 
-describe "httpsTransport", ->
+describe "httpsServer", ->
 
   it "should throw error because of no params", ->
     (->
@@ -165,41 +169,48 @@ describe "httpsTransport", ->
     ).should.throw Error
 
   it "should correct save params", ->
-    transport = new rpc.httpTransport { port: 8080, ssl: true }
-    transport.should.have.property "params"
-    transport.should.have.property "http"
-    transport.params.should.deep.equal { port: 8080, ssl: true }
+    httpsTransport = new rpc.httpTransport { port: 8443, ssl: true }
+    httpsTransport.should.have.property "params"
+    httpsTransport.should.have.property "http"
+    httpsTransport.params.should.deep.equal { port: 8443, ssl: true }
 
   it "should success set header", ->
-    transport.setHeader('test','value-612');
-    transport.params.headers.should.deep.equal {test: 'value-612'}
+    httpsTransport.setHeader('test','value-612');
+    httpsTransport.params.headers.should.deep.equal {test: 'value-612'}
 
   it "should success remove header", ->
-    transport.removeHeader('test');
-    transport.params.headers.should.deep.equal {}
+    httpsTransport.removeHeader('test');
+    httpsTransport.params.headers.should.deep.equal {}
 
   it "should throw error because of no key+cert", ->
-    transport.listen.should.throw Error
+    httpsTransport.listen.should.throw Error
 
   it "should throw error because of no cert", ->
-    transport.params.key = fs.readFileSync(__dirname + "/keys/ssl-key.pem")
-    transport.listen.should.throw Error
+    httpsTransport.params.key = fs.readFileSync(__dirname + "/keys/ssl-key.pem")
+    httpsTransport.listen.should.throw Error
 
   it "should throw error because of no server", ->
-    transport.params.cert = fs.readFileSync(__dirname + "/keys/ssl-cert.pem")
-    transport.listen.should.throw Error
+    httpsTransport.params.cert = fs.readFileSync(__dirname + "/keys/ssl-cert.pem")
+    httpsTransport.listen.should.throw Error
 
   it "should success listen server", ->
     (->
-      transport.listen server
+      httpsTransport.listen server
     ).should.not.throws Error
 
 
 
-describe "Client", ->
+describe "httpsClient", ->
+
+  it "should throw error because of no transport", ->
+    (->
+      new rpc.client
+    ).should.throw Error
 
   it "should have transport and id", ->
-    client = new rpc.client(transport)
+    httpsTransport.setHeader 'Cookie','sessionID='+sessionId
+
+    client = new rpc.client httpsTransport
     client.should.have.property "transport"
     client.should.have.property "id"
     client.id.should.equal 0
@@ -208,6 +219,28 @@ describe "Client", ->
   it "should correct generate requests", ->
     client.request("sum", [1,"2",null]).should.deep.equal {id:1, jsonrpc:"2.0", method: "sum", params:[1,"2",null]}
     client.request("console", { message: "Hello world!" }, false).should.deep.equal {jsonrpc:"2.0", method: "console", params:{message: "Hello world!"}}
+
+
+  it "should success call single method sum", ->
+    after (done) ->
+      client.call 'sum', [5, 16], (err, raw) ->
+        should.equal err, null
+        obj = JSON.parse(raw)
+        obj.should.deep.equal {id:2, jsonrpc:"2.0", result:21 }
+        done()
+
+
+  it "should success call single method math.log", ->
+    after (done) ->
+      client.call 'math.log', [10, 12], (err, raw) ->
+        should.equal err, null
+        obj = JSON.parse(raw)
+        obj.should.deep.equal {id:3, jsonrpc:"2.0", result:0.9266284080291269 }
+        done()
+
+  it "should notice without result", ->
+   should.equal(client.notify("console", { message: "Hello world!" }), true)
+
 
 
 
@@ -219,20 +252,20 @@ describe "tcpTransport", ->
     ).should.throw Error
 
   it "should correct save params", ->
-    transport = new rpc.tcpTransport {}
-    transport.should.have.property "params"
+    tcpTransport = new rpc.tcpTransport {}
+    tcpTransport.should.have.property "params"
 
   it "should throw error because of no port", ->
-    transport.listen.should.throw Error
+    tcpTransport.listen.should.throw Error
 
   it "should throw error because of no server", ->
-    transport.params.port = 9000
-    transport.params.should.deep.equal {port: 9000}
-    transport.listen.should.throw Error
+    tcpTransport.params.port = 9000
+    tcpTransport.params.should.deep.equal {port: 9000}
+    tcpTransport.listen.should.throw Error
 
   it "should success listen server", ->
     (->
-      transport.listen server
+      tcpTransport.listen server
     ).should.not.throws Error
 
 
@@ -272,3 +305,4 @@ describe "rpcError", ->
 
   it "should generate invalidParams with defaults", ->
     rpcError.invalidParams().should.deep.equal {id: null, jsonrpc: "2.0", error: {code: -32602, message: "InvalidParams"}}
+

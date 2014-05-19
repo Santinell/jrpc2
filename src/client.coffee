@@ -1,8 +1,10 @@
 class client
 
-  constructor: (@transport) ->
-
   id: 0
+
+  constructor: (@transport) ->
+    if !@transport
+      throw new Error 'emptyTransport'
 
   request: (method, params, setId = true) ->
     req = {

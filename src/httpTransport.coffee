@@ -15,6 +15,7 @@ class httpTransport
 
   send: (body, callback) ->
     @params.method = 'POST'
+    @setHeader('Content-Length', Buffer.byteLength(JSON.stringify(body), 'utf8'))
     req = @http.request @params, (res) ->
       data = ""
       res.on 'data', (chunk) ->
@@ -25,8 +26,8 @@ class httpTransport
       res.on 'error', (e) ->
         if callback
           callback e, null
-    req.write JSON.stringify body
-    req.end()
+      true
+    req.end JSON.stringify(body), 200
 
 
 
@@ -43,6 +44,7 @@ class httpTransport
           if answer
             res.writeHead 200, {'Content-Type': 'application/json'}
             res.write JSON.stringify answer
+          res.emit 'close'
           res.end()
 
     if @params.ssl
