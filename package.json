@@ -1,8 +1,8 @@
 {
   "author": "Santinell",
   "name": "jrpc2",
-  "description": "JSON-RPC 2.0 library with support of batches and named parameters. Simple loading of modules. You can use http, https, ws, wss, tcp protocols for your server and client. Extend your method's scope by change context of server.",
-  "version": "0.2.5",
+  "description": "JSON-RPC 2.0 library with support of batches and named parameters. Simple loading of modules. You can use HTTP, HTTPS, WebSocket, WebSocket Secure, TCP protocols for your server and client.",
+  "version": "0.2.7",
   "main": "./lib/jrpc2.js",
   "keywords": [
     "json",
@@ -31,12 +31,10 @@
   },
   "readmeFilename": "README.md",
   "dependencies": {
-    "async": "*",
-    "ws": "*"
+    "async": "*"
   },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/Santinell/jrpc2.git"
+  "optionalDependencies": {
+    "ws": "*"
   },
   "devDependencies": {
     "coffee-script": "*",
@@ -45,6 +43,10 @@
     "coveralls": "*",
     "istanbul": "*",
     "mocha-lcov-reporter": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Santinell/jrpc2.git"
   },
   "homepage": "https://github.com/Santinell/jrpc2",
   "engines": {

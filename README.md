@@ -31,8 +31,8 @@ Server example:
 
   var server = new rpc.server;
 
-  server.loadModules(__dirname + '/modules/', function() {
-    var http = new rpc.httpTransport({ port: 8080, websocket: true });
+  server.loadModules(__dirname + '/modules/', function () {
+    var http = new rpc.httpTransport({port: 8080, websocket: true});
     http.listen(server);
   });
 ```
@@ -43,7 +43,7 @@ Example of 'users' module (./modules/users.js in this example):
 
 ```javascript
   var users = {
-    auth: function(login, password) {
+    auth: function (login, password) {
       if (login === 'admin' && password === 'swd') {
         return 'Hello admin';
       } else {
@@ -60,17 +60,17 @@ Client example:
 ```javascript
   var rpc = require('jrpc2');
 
-  var http = new rpc.httpTransport({ port: 8080, hostname: 'localhost' });
+  var http = new rpc.httpTransport({port: 8080, hostname: 'localhost'});
 
   var client = new rpc.client(http);
 
   //single call with named parameters
-  client.call('users.auth', { password: "swd", login: "admin" }, function(err, raw) {
+  client.call('users.auth', {password: "swd", login: "admin"}, function (err, raw) {
     console.log(err, raw);
   });
 
   //single call with positional parameters
-  client.call('users.auth', ["user", "pass"], function(err, raw) {
+  client.call('users.auth', ["user", "pass"], function (err, raw) {
     console.log(err, raw);
   });
 
@@ -80,7 +80,7 @@ Client example:
     {login: "cozy", password: "causeBorn"},
     ["admin", "wrong"]
   ];
-  client.batch(methods, params, function(err, raw) {
+  client.batch(methods, params, function (err, raw) {
     console.log(err, raw);
   });
 ```
@@ -96,21 +96,21 @@ var url = require('url');
 var mongo = require('mongodb').MongoClient;
 var server = new rpc.server();
 
-server.loadModules(__dirname + '/modules/', function() {
+server.loadModules(__dirname + '/modules/', function () {
     var https = new rpc.httpTransport({
       port: 8443,
       ssl: true,
       key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'),
       cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')
     });
-    mongo.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
+    mongo.connect('mongodb://127.0.0.1:27017/test', function (err, db) {
         //this is our new context
         var app = {};
         app.mongo = mongo;
         app.db = db;
         //there you can check session ID or login and password of basic auth in headers.
         //And check whether the user has access to that method
-        server.checkAuth = function(method, params, headers) {
+        server.checkAuth = function (method, params, headers) {
             if (method === 'users.auth') {//for methods that don't require authorization
                 return true;
             } else {
@@ -148,7 +148,7 @@ it('should correct load modules from directory', function () {
   });
 ```javascript
   var logs = {
-    userLogout: function(timeOnSite, lastPage) {
+    userLogout: function (timeOnSite, lastPage) {
         //this.db from context of app
         var logsCollection = this.db.collection('logs');
         //this.user from context of app
@@ -167,16 +167,16 @@ Https client with auth and notification:
   //ignore self-signed sertificate, remove for production
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-  var https = new rpc.httpTransport({ port: 8443, hostname: 'localhost', ssl: true });
+  var https = new rpc.httpTransport({port: 8443, hostname: 'localhost', ssl: true});
   var client = new rpc.client(https);
 
-  client.call('users.auth', { password: "swd", login: "admin" }, function(err, raw) {
+  client.call('users.auth', {password: "swd", login: "admin"}, function (err, raw) {
     var obj = JSON.parse(raw);
     if (obj.error) {
         console.log(obj.error.description);
     } else { //successful auth
       https.setHeader('Cookie', 'sessionID=' + obj.result.sessionID);
-      client.notify('logs.userLogout', { timeOnSite: 364, lastPage: '/price' });
+      client.notify('logs.userLogout', {timeOnSite: 364, lastPage: '/price'});
     }
   });
 ```

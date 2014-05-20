@@ -15,7 +15,6 @@ class httpTransport
 
   send: (body, callback) ->
     @params.method = 'POST'
-    @setHeader('Content-Length', Buffer.byteLength(JSON.stringify(body), 'utf8'))
     req = @http.request @params, (res) ->
       data = ""
       res.on 'data', (chunk) ->
@@ -26,8 +25,7 @@ class httpTransport
       res.on 'error', (e) ->
         if callback
           callback e, null
-      true
-    req.end JSON.stringify(body), 200
+    req.end JSON.stringify(body)
 
 
 

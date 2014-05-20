@@ -19,6 +19,7 @@ class client
   notify: (method, params = []) ->
     req = @request method, params, false
     @transport.send req
+    true
 
   batch: (methods, params, callback) ->
     req = []
