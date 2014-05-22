@@ -135,8 +135,7 @@ server.loadModules(__dirname + '/modules/', function () {
 });
 ```
 
-And now you can use context in your modules:
-(For async methods you can use promises)
+And now you can use context in your modules (for async methods you can use promises):
 
 ```javascript
 
