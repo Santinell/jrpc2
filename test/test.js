@@ -1,6 +1,7 @@
 var should = require("chai").should();
 var fs = require("fs");
 var url = require("url");
+var Q = require("q");
 var rpc = require("../lib/jrpc2");
 var server = null;
 var httpsTransport = null;
@@ -90,6 +91,21 @@ describe("Server", function () {
     server.methods["sum"].should.be.an["instanceof"](Function);
   });
 
+  it("should have sucess expose function with promise", function () {
+    server.expose("reverse", function (num) {
+      /*return Q.fcall(function () {
+        return num*-1;
+      });*/
+      return Q.delay(1500).then(function () {
+        return num*-1;
+      });
+    });
+    server.should.have.property("methods");
+    server.methods.should.have.property("reverse");
+    server.methods["reverse"].execute(server, [13]).should.have.property("then");
+    server.methods["reverse"].should.be.an["instanceof"](Function);
+  });
+
   it("should have success module expose", function () {
     server.exposeModule("math", {
       log: function (num, base) {
@@ -99,13 +115,6 @@ describe("Server", function () {
     server.should.have.property("methods");
     server.methods.should.have.property("math.log");
     server.methods["math.log"].should.be.an["instanceof"](Function);
-  });
-
-  it("should correct results with new methods", function () {
-    server.methods["sum"](14, 28).should.equal(42);
-    server.methods["sum"](21.4, 33.1).should.equal(54.5);
-    server.methods["math.log"](10, 10).should.equal(1);
-    server.methods["math.log"](10, Math.E).should.equal(2.302585092994046);
   });
 
   it("should correct work with context", function () {
@@ -178,6 +187,14 @@ describe("Server", function () {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', result: 0.9266284080291269});
     };
     server.handleRequest('{"id": 1, "jsonrpc":"2.0", "method": "math.log", "params": {"num":10,"base":12} }', {}, callback);
+  });
+
+  it("should correct work with promises", function (done) {
+    var callback = function (result) {
+      result.should.deep.equal({id: 1, jsonrpc: '2.0', result: -13});
+      done();
+    };
+    server.handleRequest('{"id": 1, "jsonrpc": "2.0", "method": "reverse", "params": {"num": 13}}', {}, callback);
   });
 
   it("should error on empty batch", function () {
@@ -358,26 +375,23 @@ describe("httpsClient", function () {
     httpsClient.request("console", {message: "Hello world!"}, false).should.deep.equal({jsonrpc: "2.0", method: "console", params: {message: "Hello world!"}});
   });
 
-  it("should return accessDenied", function () {
-    after(function (done) {
-      httpsClient.call('sum', [3, 12], function (err, raw) {
-        should.equal(err, null);
-        var obj = JSON.parse(raw);
-        obj.should.deep.equal({id: 2, jsonrpc: "2.0", error: {code: -32000, message: 'AccessDenied'}});
-        done();
-      });
+  it("should return accessDenied", function (done) {
+    httpsClient.call('sum', [3, 12], function (err, raw) {
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 2, jsonrpc: "2.0", error: {code: -32000, message: 'AccessDenied'}});
+      done();
     });
   });
 
-  it("should success call single method sum", function () {
-    after(function (done) {
-      httpsTransport.setHeader('Cookie', 'sessionID=' + sessionId);
-      httpsClient.call('sum', [5, 16], function (err, raw) {
-        should.equal(err, null);
-        var obj = JSON.parse(raw);
-        obj.should.deep.equal({id: 3, jsonrpc: "2.0", result: 21});
-        done();
-      });
+  it("should success call single method sum", function (done) {
+
+    httpsTransport.setHeader('Cookie', 'sessionID=' + sessionId);
+    httpsClient.call('sum', [5, 16], function (err, raw) {
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 3, jsonrpc: "2.0", result: 21});
+      done();
     });
   });
 
@@ -386,34 +400,33 @@ describe("httpsClient", function () {
     should.equal(res, true);
   });
 
-  it("should success call single method math.log", function () {
-    after(function (done) {
-      httpsClient.call('math.log', [10, 12], function (err, raw) {
-        should.equal(err, null);
-        var obj = JSON.parse(raw);
-        obj.should.deep.equal({id: 4, jsonrpc: "2.0", result: 0.9266284080291269});
-        done();
-      });
+  it("should success call single method math.log", function (done) {
+
+    httpsClient.call('math.log', [10, 12], function (err, raw) {
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 4, jsonrpc: "2.0", result: 0.9266284080291269});
+      done();
     });
   });
 
-  it("should success call batch", function () {
-    after(function (done) {
-      var methods = ['sum', 'math.log'];
-      var params = [
-        [1, 9],
-        [10, 12]
-      ];
-      httpsClient.batch(methods, params, function (err, raw) {
-        should.equal(err, null);
-        var obj = JSON.parse(raw);
-        obj.should.deep.equal([
-          {id: 5, jsonrpc: "2.0", result: 10},
-          {id: 6, jsonrpc: "2.0", result: 0.9266284080291269}
-        ]);
-        done();
-      });
+  it("should success call batch", function (done) {
+
+    var methods = ['sum', 'math.log'];
+    var params = [
+      [1, 9],
+      [10, 12]
+    ];
+    httpsClient.batch(methods, params, function (err, raw) {
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal([
+        {id: 5, jsonrpc: "2.0", result: 10},
+        {id: 6, jsonrpc: "2.0", result: 0.9266284080291269}
+      ]);
+      done();
     });
+
   });
 
 });
@@ -440,28 +453,24 @@ describe("tcpClient", function () {
     tcpClient.request("console", {message: "Hello world!"}, false).should.deep.equal({jsonrpc: "2.0", method: "console", params: {message: "Hello world!"}});
   });
 
-  it("should return accessDenied", function () {
-    after(function (done) {
-      tcpClient.call('sum', [3, 12], function (err, raw) {
-        server.checkAuth = function (method, params, headers) {
-          return true;
-        };
-        should.equal(err, null);
-        var obj = JSON.parse(raw);
-        obj.should.deep.equal({id: 2, jsonrpc: "2.0", error: {code: -32000, message: 'AccessDenied'}});
-        done();
-      });
+  it("should return accessDenied", function (done) {
+    tcpClient.call('sum', [3, 12], function (err, raw) {
+      server.checkAuth = function (method, params, headers) {
+        return true;
+      };
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 2, jsonrpc: "2.0", error: {code: -32000, message: 'AccessDenied'}});
+      done();
     });
   });
 
-  it("should success call single method sum", function () {
-    after(function (done) {
-      tcpClient.call('sum', [5, 16], function (err, raw) {
-        should.equal(err, null);
-        var obj = JSON.parse(raw);
-        obj.should.deep.equal({id: 3, jsonrpc: "2.0", result: 21});
-        done();
-      });
+  it("should success call single method sum", function (done) {
+    tcpClient.call('sum', [5, 16], function (err, raw) {
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 3, jsonrpc: "2.0", result: 21});
+      done();
     });
   });
 
@@ -470,33 +479,29 @@ describe("tcpClient", function () {
     should.equal(res, true);
   });
 
-  it("should success call single method math.log", function () {
-    after(function (done) {
-      tcpClient.call('math.log', [10, 12], function (err, raw) {
-        should.equal(err, null);
-        var obj = JSON.parse(raw);
-        obj.should.deep.equal({id: 4, jsonrpc: "2.0", result: 0.9266284080291269});
-        done();
-      });
+  it("should success call single method math.log", function (done) {
+    tcpClient.call('math.log', [10, 12], function (err, raw) {
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 4, jsonrpc: "2.0", result: 0.9266284080291269});
+      done();
     });
   });
 
-  it("should success call batch", function () {
-    after(function (done) {
-      var methods = ['sum', 'math.log'];
-      var params = [
-        [1, 9],
-        [10, 12]
-      ];
-      tcpClient.batch(methods, params, function (err, raw) {
-        should.equal(err, null);
-        var obj = JSON.parse(raw);
-        obj.should.deep.equal([
-          {id: 5, jsonrpc: "2.0", result: 10},
-          {id: 6, jsonrpc: "2.0", result: 0.9266284080291269}
-        ]);
-        done();
-      });
+  it("should success call batch", function (done) {
+    var methods = ['sum', 'math.log'];
+    var params = [
+      [1, 9],
+      [10, 12]
+    ];
+    tcpClient.batch(methods, params, function (err, raw) {
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal([
+        {id: 5, jsonrpc: "2.0", result: 10},
+        {id: 6, jsonrpc: "2.0", result: 0.9266284080291269}
+      ]);
+      done();
     });
   });
 });

@@ -1,7 +1,6 @@
 [![Build Status](https://travis-ci.org/Santinell/jrpc2.svg?branch=master)](https://travis-ci.org/Santinell/jrpc2) [![Coverage Status](https://coveralls.io/repos/Santinell/jrpc2/badge.png)](https://coveralls.io/r/Santinell/jrpc2)
 
 ![NPM Info](https://nodei.co/npm/jrpc2.png?downloads=true)
-
 JRPC2
 =====
 
@@ -39,20 +38,17 @@ Server example:
 
 It's very simple way to load modules. Just put it in one directory.
 
-Example of 'users' module (./modules/users.js in this example):
+Example of 'logs' module (./modules/logs.js in this example):
 
 ```javascript
-  var users = {
-    auth: function (login, password) {
-      if (login === 'admin' && password === 'swd') {
-        return 'Hello admin';
-      } else {
-        throw new Error('Wrong login or password');
-      }
+
+  var logs = {
+    userLogout: function (timeOnSite, lastPage) {
+        this.db.collection('logs').insert({userId: this.user.userId, time: timeOnSite, lastPage: lastPage});
     }
   };
 
-  module.exports = users;
+  module.exports = logs;
 ```
 
 Client example:
@@ -88,12 +84,11 @@ Client example:
 
 Complex example of https server with checkAuth and change of context:
 
-(This is schematic example, so i don't test it)
 ```javascript
 
 var rpc = require('jrpc2');
 var url = require('url');
-var mongo = require('mongodb').MongoClient;
+var mongoose = require('mongoose');
 var server = new rpc.server();
 
 server.loadModules(__dirname + '/modules/', function () {
@@ -103,10 +98,10 @@ server.loadModules(__dirname + '/modules/', function () {
       key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'),
       cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')
     });
-    mongo.connect('mongodb://127.0.0.1:27017/test', function (err, db) {
+    mongoose.connect('mongodb://127.0.0.1:27017/test', function (err, db) {
         //this is our new context
         var app = {};
-        app.mongo = mongo;
+        app.mongoose = mongoose;
         app.db = db;
         //there you can check session ID or login and password of basic auth in headers.
         //And check whether the user has access to that method
@@ -140,23 +135,24 @@ server.loadModules(__dirname + '/modules/', function () {
 ```
 
 And now you can use context in your modules:
-it('should correct load modules from directory', function () {
-    server.loadModules(__dirname + '/modules/', function () {
-      server.methods.should.have.property('users.auth');
-      server.methods['users.auth'].should.be.an.instanceof(Function);
-    });
-  });
+(For async methods you can use promises)
+
 ```javascript
-  var logs = {
-    userLogout: function (timeOnSite, lastPage) {
-        //this.db from context of app
-        var logsCollection = this.db.collection('logs');
-        //this.user from context of app
-        logsCollection.insert({userId: this.user.userId, time: timeOnSite, lastPage: lastPage});
+
+  var users = {
+    auth: function(login, password) {
+      //this.mongoose and this.db from context
+      var promise = new this.mongoose.Promise();
+      this.db.Users.findOne({login: login, password: password}, function(err, user) {
+        if (err)
+          throw new Error('Wrong login or password');
+        return promise.resolve(user);
+      });
+      return promise;
     }
   };
 
-  module.exports = logs;
+  module.exports = users;
 ```
 
 Https client with auth and notification:

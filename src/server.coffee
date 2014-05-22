@@ -106,7 +106,15 @@ class server
       ((req, server) ->
         method = server.methods[req.method]
         calls.push (callback) ->
-          result = null
+
+          requestDone = (result) ->
+            response =
+              jsonrpc: '2.0'
+              result: result || null
+            if req.id
+              response.id = req.id
+            callback null, response
+
           try
             result = method.execute server.context, req.params
           catch error
@@ -115,12 +123,12 @@ class server
             else
               return callback null, error #if method throw rpcError
 
-          response =
-            jsonrpc: '2.0'
-            result: result || null
-          if req.id
-            response.id = req.id
-          callback null, response)(request, @)
+          if typeof result.then is 'function'
+            result.then requestDone
+          else
+            requestDone result
+
+        )(request, @)
 
     async.parallel calls, (err, response) ->
       if response.length is 0
