@@ -44,7 +44,8 @@ Example of 'logs' module (./modules/logs.js in this example):
 
   var logs = {
     userLogout: function (timeOnSite, lastPage) {
-        this.db.collection('logs').insert({userId: this.user.userId, time: timeOnSite, lastPage: lastPage});
+        var coll = this.db.collection('logs');
+        coll.insert({userId: this.user.userId, time: timeOnSite, lastPage: lastPage});
     }
   };
 
