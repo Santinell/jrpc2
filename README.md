@@ -143,7 +143,8 @@ And now you can use context in your modules (for async methods you can use promi
     auth: function(login, password) {
       //this.mongoose and this.db from context
       var promise = new this.mongoose.Promise();
-      this.db.Users.findOne({login: login, password: password}, function(err, user) {
+      var coll = this.db.collection('users');
+      coll.findOne({login: login, password: password}, function(err, user) {
         if (err)
           throw new Error('Wrong login or password');
         return promise.resolve(user);
