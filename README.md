@@ -117,7 +117,7 @@ server.loadModules(__dirname + '/modules/', function () {
                     var query = this.db.collection('users').findOne({session_id: sessionID});
                     var promise = query.exec(function(err, user) {
                       if (err)
-                        throw new Error('Wrong login or password'); 
+                        return false; 
                       app.user = user;
                       return true;
                     });
