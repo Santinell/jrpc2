@@ -96,7 +96,7 @@ describe("Server", function () {
       /*return Q.fcall(function () {
         return num*-1;
       });*/
-      return Q.delay(1500).then(function () {
+      return Q.delay(500).then(function () {
         return num*-1;
       });
     });
@@ -228,12 +228,21 @@ describe("Server", function () {
   it("should correct set checkAuth function", function () {
     server.checkAuth("", [], {}).should.equal(true);
     server.checkAuth = function (method, params, headers) {
+      return method === "users.auth";
+    };
+    server.checkAuth("", [], {}).should.not.equal(true);
+  });
+
+  it("should correct work with promised checkAuth function", function () {
+    server.checkAuth = function (method, params, headers) {
       if (method === "users.auth") {
         return true;
       } else {
         var cookies = url.parse("?" + (headers.cookie || ""), true).query;
         var sessionID = cookies.sessionID || "";
-        return sessionID === "9037c4852fc3a3f452b1ee2b93150603";
+        return Q.delay(500).then(function () {
+          return sessionID === "9037c4852fc3a3f452b1ee2b93150603";
+        });
       }
     };
     server.checkAuth("", [], {}).should.not.equal(true);

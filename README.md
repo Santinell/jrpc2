@@ -85,6 +85,7 @@ Client example:
 
 Complex example of https server with checkAuth and change of context:
 
+(for async checkAuth you can use promises)
 ```javascript
 
 var rpc = require('jrpc2');
@@ -110,21 +111,17 @@ server.loadModules(__dirname + '/modules/', function () {
             if (method === 'users.auth') {//for methods that don't require authorization
                 return true;
             } else {
-                if (!app.user) {
+                if (!app.user)
                     var cookies = url.parse('?' + (headers.cookie || ''), true).query;
                     var sessionID = cookies.sessionID || '';
-                    var usersCollection = db.collection('users');
-                    app.user = usersCollection.findOne({session_id: sessionID});
-                    if (!app.user) //user not found
-                        return false;
-                }
-                //check permissions
-                var permissionsCollection = db.collection('permissions');
-                access = permissionsCollection.findOne({role: app.user.role, method: method});
-                if (access)
-                    return true;
-                else
-                    return false;
+                    var query = this.db.collection('users').findOne({session_id: sessionID});
+                    var promise = query.exec(function(err, user) {
+                      if (err)
+                        throw new Error('Wrong login or password'); 
+                      app.user = user;
+                      return true;
+                    });
+                    return promise;
             }
         }
         //There we set context
@@ -141,13 +138,13 @@ And now you can use context in your modules (for async methods you can use promi
 
   var users = {
     auth: function(login, password) {
-      //this.mongoose and this.db from context
-      var promise = new this.mongoose.Promise();
-      var coll = this.db.collection('users');
-      coll.findOne({login: login, password: password}, function(err, user) {
-        if (err)
+      //this.db from context
+      var query = this.db.collection('users').findOne({login: login, password: password});
+      var promise = query.exec(function(err, user) {
+        if (err) {
           throw new Error('Wrong login or password');
-        return promise.resolve(user);
+        }
+        return {sessionId: user.sessionId};
       });
       return promise;
     }

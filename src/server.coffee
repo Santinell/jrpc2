@@ -16,6 +16,7 @@ Function::execute = (scope, argsList = []) ->
 class server
 
   methods: {}
+  headers: {}
 
   constructor: () ->
     @context = @
@@ -41,12 +42,32 @@ class server
         callback()
 
 
-  handleRequest: (json, headers, reply) ->
-    try
-      requests = JSON.parse(json)
-    catch error
-      return reply rpcError.invalidRequest()
+  callPush: (req, done) ->
+    done null, (callback) =>
+      method = @methods[req.method]
+      requestDone = (result) ->
+        response =
+          jsonrpc: '2.0'
+          result: result || null
+        if req.id
+          response.id = req.id
+        callback null, response
 
+      try
+        result = method.execute @context, req.params
+      catch error
+        if error instanceof Error
+          return callback null, rpcError.abstract error.message, -32099, req.id #if method throw common Error
+        else
+          return callback null, error #if method throw rpcError
+
+      if typeof result.then is 'function'
+        result.then requestDone
+      else
+        requestDone result
+
+
+  getCalls: (requests, afterGenerate) ->
     checkRequestFields = (request) ->
       res = true
       if !request.method
@@ -57,16 +78,55 @@ class server
         res = false
       res
 
-    handleNotification = (request) =>
-      check1 = checkRequestFields request
-      if check1 is true && @methods[request.method]
-        check2 = @checkAuth(request.method, request.params, headers)
-        if check2 is true
+    iterator = (request, done) =>
+      if request not instanceof Object
+        done null,(callback) =>
+          callback null, rpcError.invalidRequest()
+        return
+
+      check = checkRequestFields request
+      if check != true
+        if request.id
+          done null,(callback) =>
+            callback null, rpcError.invalidRequest request.id
+        return
+
+      if !@methods[request.method]
+        if request.id
+          done null,(callback) =>
+            callback null, rpcError.methodNotFound request.id
+        return
+
+      res = @checkAuth request.method, request.params, @headers
+      afterAuth = (res) =>
+        if res != true
+          if request.id
+            done null,(callback) =>
+              callback null, rpcError.abstract "AccessDenied", -32000, request.id
+          return
+
+        if request.id
+          @callPush request, done
+        else
           method = @methods[request.method]
           try
             method.execute @context, request.params
           finally
-            #nothing there
+          #nothig there
+
+      if typeof res.then is 'function'
+        res.then afterAuth
+      else
+        afterAuth res
+
+    async.map requests, iterator, afterGenerate
+
+
+  handleRequest: (json, @headers, reply) ->
+    try
+      requests = JSON.parse(json)
+    catch error
+      return reply rpcError.invalidRequest()
 
     batch = 1
     if requests not instanceof Array
@@ -75,67 +135,13 @@ class server
     else if requests.length is 0
       return reply rpcError.invalidRequest()
 
-    calls = []
-    for request in requests
-      if request not instanceof Object
-        calls.push (callback) =>
-          callback null, rpcError.invalidRequest()
-        continue
-
-      if !request.id #for notifications
-        handleNotification request
-        continue
-
-      check = checkRequestFields request
-      if check != true
-        calls.push (callback) =>
-          callback null, rpcError.invalidRequest request.id
-        continue
-
-      if !@methods[request.method]
-        calls.push (callback) =>
-          callback null, rpcError.methodNotFound request.id
-        continue
-
-      res = @checkAuth(request.method, request.params, headers)
-      if res != true
-        calls.push (callback) =>
-          callback null, rpcError.abstract "AccessDenied", -32000, request.id
-        continue
-
-      ((req, server) ->
-        method = server.methods[req.method]
-        calls.push (callback) ->
-
-          requestDone = (result) ->
-            response =
-              jsonrpc: '2.0'
-              result: result || null
-            if req.id
-              response.id = req.id
-            callback null, response
-
-          try
-            result = method.execute server.context, req.params
-          catch error
-            if error instanceof Error
-              return callback null, rpcError.abstract error.message, -32099, req.id #if method throw common Error
-            else
-              return callback null, error #if method throw rpcError
-
-          if typeof result.then is 'function'
-            result.then requestDone
-          else
-            requestDone result
-
-        )(request, @)
-
-    async.parallel calls, (err, response) ->
-      if response.length is 0
-        return reply null
-      if !batch && response instanceof Array
-        response = response[0]
-      reply response
+    @getCalls requests, (error, calls) ->
+      async.parallel calls, (err, response) ->
+        if response.length is 0
+          return reply null
+        if !batch && response instanceof Array
+          response = response[0]
+        reply response
 
 
 module.exports = server
