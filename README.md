@@ -114,7 +114,7 @@ server.loadModules(__dirname + '/modules/', function () {
                 if (!app.user)
                     var cookies = url.parse('?' + (headers.cookie || ''), true).query;
                     var sessionID = cookies.sessionID || '';
-                    var query = this.db.collection('users').findOne({session_id: sessionID});
+                    var query = db.collection('users').findOne({session_id: sessionID});
                     var promise = query.exec(function(err, user) {
                       if (err)
                         return false; 

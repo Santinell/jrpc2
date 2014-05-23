@@ -240,7 +240,7 @@ describe("Server", function () {
       } else {
         var cookies = url.parse("?" + (headers.cookie || ""), true).query;
         var sessionID = cookies.sessionID || "";
-        return Q.delay(500).then(function () {
+        return Q.delay(100).then(function () {
           return sessionID === "9037c4852fc3a3f452b1ee2b93150603";
         });
       }
