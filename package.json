@@ -1,8 +1,8 @@
 {
   "author": "Santinell",
   "name": "jrpc2",
-  "description": "JSON-RPC 2.0 library with support of batches and named parameters. Simple loading of modules. You can use HTTP, HTTPS, WebSocket, WebSocket Secure, TCP protocols for your server and client.",
-  "version": "0.2.9",
+  "description": "JSON-RPC 2.0 library with support of batches and named parameters. Simple loading of modules. You can use HTTP, HTTPS, WebSocket, WebSocket Secure, TCP protocols for your server and client + Express/Connect middleware.",
+  "version": "0.3.0",
   "main": "./lib/jrpc2.js",
   "keywords": [
     "json",

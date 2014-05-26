@@ -4,3 +4,4 @@ exports.client = require './client'
 
 exports.httpTransport = require './httpTransport'
 exports.tcpTransport = require './tcpTransport'
+exports.middleware = require './middleware'

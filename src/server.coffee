@@ -97,7 +97,6 @@ class server
             callback null, rpcError.methodNotFound request.id
         return
 
-      res = @checkAuth request.method, request.params, @headers
       afterAuth = (res) =>
         if res != true
           if request.id
@@ -114,6 +113,7 @@ class server
           finally
           #nothig there
 
+      res = @checkAuth request.method, request.params, @headers
       if typeof res.then is 'function'
         res.then afterAuth
       else
