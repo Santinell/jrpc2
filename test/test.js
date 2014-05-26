@@ -6,8 +6,10 @@ var rpc = require("../lib/jrpc2");
 var server = null;
 var httpsTransport = null;
 var tcpTransport = null;
+var zmqTransport = null;
 var httpsClient = null;
 var tcpClient = null;
+var zmqClient = null;
 var sessionId = "9037c4852fc3a3f452b1ee2b93150603";
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -528,20 +530,76 @@ describe("Express middleware", function () {
     }).should.not.throw(Error)
   });
 
-  it("should correct works with httpClient", function () {
+  it("should correct works with httpClient", function (done) {
     var httpTransport = new rpc.httpTransport({port:8080});
     var httpClient = new rpc.client(httpTransport);
-    var callback1 = function(err, raw){
+    var callback = function(err, raw){
       should.not.exist(err);
       var obj = JSON.parse(raw);
-      obj.should.deep.equal({id: 1, jsonrpc: '2.0', result: 77});
+      obj.should.deep.equal({id: 1, jsonrpc: '2.0', result: 0.5578858913022596});
+      done();
     };
-    var callback2 = function(err, raw){
+    httpClient.call("math.log", [4, 12], callback);
+  });
+});
+
+
+
+describe("zmqTransport", function () {
+
+  it("should throw error because of no params", function () {
+    (function () {
+      new rpc.zmqTransport();
+    }).should.throw(Error);
+  });
+
+  it("should correct save params", function () {
+    zmqTransport = new rpc.zmqTransport({});
+    zmqTransport.should.have.property("params");
+  });
+
+  it("should throw error because of no url", function () {
+    zmqTransport.listen.should.throw(Error);
+  });
+
+  it("should throw error because of no server", function () {
+    zmqTransport.params.url = 'tcp://127.0.0.1:5555';
+    zmqTransport.params.should.deep.equal({url: 'tcp://127.0.0.1:5555'});
+    zmqTransport.listen.should.throw(Error);
+  });
+
+  it("should success listen server", function () {
+    (function () {
+      zmqTransport.listen(server);
+    }).should.not.throw(Error);
+  });
+});
+
+
+
+describe("zmqClient", function () {
+
+  it("should throw error because of no transport", function () {
+    (function () {
+      new rpc.client;
+    }).should.throw(Error);
+  });
+
+  it("should have transport and id", function () {
+    zmqClient = new rpc.client(zmqTransport);
+    zmqClient.should.have.property("transport");
+    zmqClient.should.have.property("id");
+    zmqClient.id.should.equal(0);
+    zmqClient.transport.should.not.equal(null);
+  });
+
+  it("should correct call methods", function (done) {
+    var callback = function(err, raw){
       should.not.exist(err);
       var obj = JSON.parse(raw);
-      obj.should.deep.equal({id: 2, jsonrpc: '2.0', result: 0.5578858913022596});
+      obj.should.deep.equal({id: 1, jsonrpc: '2.0', result: 55});
+      done();
     };
-    httpClient.call("sum", [56, 21], callback1);
-    httpClient.call("math.log", [4, 12], callback2);
+    zmqClient.call("sum", [22, 33], callback);
   });
 });
