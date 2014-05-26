@@ -6,8 +6,7 @@ JRPC2
 
 JSON-RPC 2.0 library with support of batches and named parameters.
 
-You can use **HTTP(S)**, **TCP**, **ZeroMQ** protocols for your server and client 
-+ **WebSocket**, **WebSocket Secure** + **Express/Connect** middleware.
+You can use **HTTP(S)**, **TCP**, **ZeroMQ** protocols for your server and client + **WebSocket**, **WebSocket Secure** + **Express/Connect** middleware.
 
 Features: simple loading of modules; extending of method's scope by change context of server.
 
