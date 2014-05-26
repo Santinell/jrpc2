@@ -46,7 +46,8 @@
     "chai": "*",
     "coveralls": "*",
     "istanbul": "*",
-    "mocha-lcov-reporter": "*"
+    "mocha-lcov-reporter": "*",
+    "express": "*"
   },
   "repository": {
     "type": "git",

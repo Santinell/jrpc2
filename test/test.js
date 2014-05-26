@@ -514,3 +514,34 @@ describe("tcpClient", function () {
     });
   });
 });
+
+
+
+describe("Express middleware", function () {
+
+  it("should correct start express with middleware", function () {
+    (function () {
+      var express = require('express');
+      var app = express();
+      app.use(rpc.middleware(server));
+      app.listen(8080);
+    }).should.not.throw(Error)
+  });
+
+  it("should correct works with httpClient", function () {
+    var httpTransport = new rpc.httpTransport({port:8080});
+    var httpClient = new rpc.client(httpTransport);
+    var callback1 = function(err, raw){
+      should.not.exist(err);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 1, jsonrpc: '2.0', result: 77});
+    };
+    var callback2 = function(err, raw){
+      should.not.exist(err);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 2, jsonrpc: '2.0', result: 0.5578858913022596});
+    };
+    httpClient.call("sum", [56, 21], callback1);
+    httpClient.call("math.log", [4, 12], callback2);
+  });
+});
