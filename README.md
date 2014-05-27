@@ -6,7 +6,11 @@ JRPC2
 
 JSON-RPC 2.0 library with support of batches and named parameters.
 
-You can use **HTTP(S)**, **TCP**, **ZeroMQ** protocols for your server and client + **WebSocket**, **WebSocket Secure** + **Express/Connect** middleware.
+Supported protocols:
++ **HTTP(S)** + **WebSocket**, **WebSocket Secure**
++ **TCP**
++ **ZeroMQ**
++ **Express/Connect** middleware.
 
 Features: simple loading of modules; extending of method's scope by change context of server.
 
@@ -182,22 +186,10 @@ var express = require('express');
 var server = new rpc.server();
 var app = express();
 
-server.expose('sayHello', function() {
-  return "Hello!";
+server.loadModules(__dirname + '/modules/', function () {
+  app.use(rpc.middleware(server));  
+  app.listen(80);
 });
-
-server.exposeModule('math', {
-  log: function(num, base) {
-    return Math.log(num) / Math.log(base);
-  },
-  sum: function(a, b) {
-    return a + b;
-  }
-});
-
-app.use(rpc.middleware(server));
-
-app.listen(80);
 
 ```
 
