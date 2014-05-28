@@ -41,7 +41,7 @@
   },
   "optionalDependencies": {
     "ws": "*",
-    "zmq": "git://github.com/AlexeyKupershtokh/zeromq.node.git#all_options"
+    "zmq": "*"
   },
   "devDependencies": {
     "q": "*",

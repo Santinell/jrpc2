@@ -89,8 +89,49 @@ Client example:
   });
 ```
 
+ZeroMQ server
 
-Complex example of https server with checkAuth and change of context:
+```javascript
+  var rpc = require('jrpc2');
+
+  var server = new rpc.server;  
+
+  server.loadModules(__dirname + '/modules/', function () {
+    var zmq = new rpc.zmqTransport({url: 'tcp://127.0.0.1:5555'});
+    zmq.listen(server);
+  });
+```
+ZeroMQ client:
+
+```javascript
+  var rpc = require('jrpc2');
+
+  var zmq = new rpc.zmqTransport({url: 'tcp://127.0.0.1:5555'});
+
+  var client = new rpc.client(zmq);
+
+  client.call('users.auth', ["admin","swd"], function (err, raw) {
+    console.log(err, raw);
+  });
+```
+
+Using as Express/Connect middleware:
+
+```javascript
+
+var rpc = require('jrpc2');
+var express = require('express');
+var server = new rpc.server();
+var app = express();
+
+server.loadModules(__dirname + '/modules/', function () {
+  app.use(rpc.middleware(server));  
+  app.listen(80);
+});
+
+```
+
+Complex example of Express/Connect + httpTransport with checkAuth and change of context:
 
 (for async checkAuth you can use promises)
 ```javascript
@@ -98,10 +139,14 @@ Complex example of https server with checkAuth and change of context:
 var rpc = require('jrpc2');
 var url = require('url');
 var mongoose = require('mongoose');
+var express = require('express');
 var server = new rpc.server();
+var app = express();
 
 server.loadModules(__dirname + '/modules/', function () {
+    app.use(rpc.middleware(server));
     var https = new rpc.httpTransport({
+      framework: app,
       port: 8443,
       ssl: true,
       key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'),
@@ -109,9 +154,9 @@ server.loadModules(__dirname + '/modules/', function () {
     });
     mongoose.connect('mongodb://127.0.0.1:27017/test', function (err, db) {
         //this is our new context
-        var app = {};
-        app.mongoose = mongoose;
-        app.db = db;
+        var global = {};
+        global.mongoose = mongoose;
+        global.db = db;
         //there you can check IP, session ID or login and password of basic auth in headers.
         //And check whether the user has access to that method
         server.checkAuth = function (method, params, headers) {
@@ -132,7 +177,7 @@ server.loadModules(__dirname + '/modules/', function () {
             }
         }
         //There we set context
-        server.context = app;
+        server.context = global;
         https.listen(server);
     });
 
@@ -179,64 +224,5 @@ Https client with auth and notification:
       https.setHeader('Cookie', 'sessionID=' + obj.result.sessionID);
       client.notify('logs.userLogout', {timeOnSite: 364, lastPage: '/price'});
     }
-  });
-```
-
-Using as Express/Connect middleware:
-
-```javascript
-
-var rpc = require('jrpc2');
-var express = require('express');
-var server = new rpc.server();
-var app = express();
-
-server.loadModules(__dirname + '/modules/', function () {
-  app.use(rpc.middleware(server));  
-  app.listen(80);
-});
-
-```
-
-Also you can use Express/Connect + httpTransport with support of ssl and websocket:
-
-```javascript
-var rpc = require('jrpc2');
-var express = require('express');
-var server = new rpc.server();
-var app = express();
-
-server.loadModules(__dirname + '/modules/', function () {
-  app.use(rpc.middleware(server));
-  var transport = new rpc.httpTransport({framework: app, port: 80, websocket: true});
-  //var transport = new rpc.httpTransport({framework: app, port: 443, ssl: true, key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'), cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')});
-  transport.listen(server);
-});
-```
-
-
-ZeroMQ server
-
-```javascript
-  var rpc = require('jrpc2');
-
-  var server = new rpc.server;  
-
-  server.loadModules(__dirname + '/modules/', function () {
-    var zmq = new rpc.zmqTransport({url: 'tcp://127.0.0.1:5555'});
-    zmq.listen(server);
-  });
-```
-ZeroMQ client:
-
-```javascript
-  var rpc = require('jrpc2');
-
-  var zmq = new rpc.zmqTransport({url: 'tcp://127.0.0.1:5555'});
-
-  var client = new rpc.client(zmq);
-
-  client.call('users.auth', ["admin","swd"], function (err, raw) {
-    console.log(err, raw);
   });
 ```
