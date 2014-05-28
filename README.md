@@ -153,10 +153,9 @@ server.loadModules(__dirname + '/modules/', function () {
       cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')
     });
     mongoose.connect('mongodb://127.0.0.1:27017/test', function (err, db) {
-        //this is our new context
-        var global = {};
-        global.mongoose = mongoose;
-        global.db = db;
+        //server.context will be available in methods
+        server.context.mongoose = mongoose;
+        server.context.db = db;
         //there you can check IP, session ID or login and password of basic auth in headers.
         //And check whether the user has access to that method
         server.checkAuth = function (method, params, headers) {
@@ -176,8 +175,6 @@ server.loadModules(__dirname + '/modules/', function () {
                     return promise;
             }
         }
-        //There we set context
-        server.context = global;
         https.listen(server);
     });
 
