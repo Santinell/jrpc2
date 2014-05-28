@@ -46,8 +46,13 @@ Example of 'logs' module (./modules/logs.js in this example):
 
   var logs = {
     userLogout: function (timeOnSite, lastPage) {
-        var coll = this.db.collection('logs');
-        coll.insert({userId: this.user.userId, time: timeOnSite, lastPage: lastPage});
+      var coll = this.db.collection('logs');
+      coll.insert({ip: this.ip, userId: this.user.userId, addTime: new Date(), 
+        text: "User logout. Spend on site:"+timeOnSite+" sec. Last page: "+lastPage});
+    },
+    loginBruteForce: function () {
+      var coll = this.db.collection('logs');
+      coll.insert({ip: this.ip, userId: null, addTime: new Date(), text: "Brute force of login form"});
     }
   };
 
@@ -192,6 +197,23 @@ server.loadModules(__dirname + '/modules/', function () {
 });
 
 ```
+
+Also you can use Express/Connect + httpTransport with support of ssl and websocket:
+
+```javascript
+var rpc = require('jrpc2');
+var express = require('express');
+var server = new rpc.server();
+var app = express();
+
+server.loadModules(__dirname + '/modules/', function () {
+  app.use(rpc.middleware(server));
+  var transport = new rpc.httpTransport({framework: app, port: 80, websocket: true});
+  //var transport = new rpc.httpTransport({framework: app, port: 443, ssl: true, key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'), cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')});
+  transport.listen(server);
+});
+```
+
 
 ZeroMQ server
 

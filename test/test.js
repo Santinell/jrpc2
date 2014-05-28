@@ -8,6 +8,7 @@ var httpsTransport = null;
 var tcpTransport = null;
 var zmqTransport = null;
 var httpsClient = null;
+var httpClient = null;
 var tcpClient = null;
 var zmqClient = null;
 var sessionId = "9037c4852fc3a3f452b1ee2b93150603";
@@ -524,15 +525,15 @@ describe("Express middleware", function () {
   it("should correct start express with middleware", function () {
     (function () {
       var express = require('express');
-      var app = express();
+      app = express();
       app.use(rpc.middleware(server));
-      app.listen(8080);
+      expressServer = app.listen(8080);
     }).should.not.throw(Error)
   });
 
   it("should correct works with httpClient", function (done) {
     var httpTransport = new rpc.httpTransport({port:8080});
-    var httpClient = new rpc.client(httpTransport);
+    httpClient = new rpc.client(httpTransport);
     var callback = function(err, raw){
       should.not.exist(err);
       var obj = JSON.parse(raw);
@@ -540,6 +541,19 @@ describe("Express middleware", function () {
       done();
     };
     httpClient.call("math.log", [4, 12], callback);
+  });
+
+  it("should correct works with httpTransport", function (done) {
+    expressServer.close();
+    var httpTransport = new rpc.httpTransport({port:8080, framework: app});
+    httpTransport.listen(server);
+    var callback = function(err, raw){
+      should.not.exist(err);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 2, jsonrpc: '2.0', result: 1.6798970175607097});
+      done();
+    };
+    httpClient.call("math.log", [65, 12], callback);
   });
 });
 

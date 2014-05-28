@@ -31,19 +31,22 @@ class httpTransport
 
   listen: (server) ->
 
-    listener = (req, res) ->
-      data = ""
-      req.on 'data', (chunk) ->
-        data += chunk
-      req.on 'end', ->
-        server.handleRequest data, req.headers, (answer) ->
-          #console.log data, req.headers
-          #console.log JSON.stringify answer
-          if answer
-            res.writeHead 200, {'Content-Type': 'application/json'}
-            res.write JSON.stringify answer
-          res.emit 'close'
-          res.end()
+    if @params.framework
+      listener = @params.framework
+    else
+      listener = (req, res) ->
+        data = ""
+        req.on 'data', (chunk) ->
+          data += chunk
+        req.on 'end', ->
+          server.handleRequest data, req.headers, (answer) ->
+            #console.log data, req.headers
+            #console.log JSON.stringify answer
+            if answer
+              res.writeHead 200, {'Content-Type': 'application/json'}
+              res.write JSON.stringify answer
+            res.emit 'close'
+            res.end()
 
     if @params.ssl
       httpServer = @http.createServer @params, listener
