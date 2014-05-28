@@ -112,20 +112,20 @@ server.loadModules(__dirname + '/modules/', function () {
         var app = {};
         app.mongoose = mongoose;
         app.db = db;
-        //there you can check session ID or login and password of basic auth in headers.
+        //there you can check IP, session ID or login and password of basic auth in headers.
         //And check whether the user has access to that method
         server.checkAuth = function (method, params, headers) {
             if (method === 'users.auth') {//for methods that don't require authorization
                 return true;
             } else {
-                if (!app.user)
+                if (!headers.user)
                     var cookies = url.parse('?' + (headers.cookie || ''), true).query;
                     var sessionID = cookies.sessionID || '';
                     var query = db.collection('users').findOne({session_id: sessionID});
                     var promise = query.exec(function(err, user) {
                       if (err)
                         return false; 
-                      app.user = user;
+                      headers.user = user;
                       return true;
                     });
                     return promise;
@@ -145,7 +145,7 @@ And now you can use context in your modules (for async methods you can use promi
 
   var users = {
     auth: function(login, password) {
-      //this.db from context
+      //this.db from server.context
       var query = this.db.collection('users').findOne({login: login, password: password});
       var promise = query.exec(function(err, user) {
         if (err) {

@@ -25,7 +25,7 @@ class tcpTransport
     tcpServer = net.createServer (socket) ->
       socket.on 'error', -> socket.end()
       socket.on 'data', (data)->
-        server.handleRequest data, {}, (answer) ->
+        server.handleRequest data, {ip: socket.remoteAddress}, (answer) ->
           #console.log data.toString()
           #console.log answer
           if answer

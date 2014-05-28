@@ -1,5 +1,6 @@
 fs = require 'fs'
 async = require 'async'
+extend = require "xtend"
 rpcError = require('./rpcError')
 
 Function::execute = (scope, argsList = []) ->
@@ -16,10 +17,9 @@ Function::execute = (scope, argsList = []) ->
 class server
 
   methods: {}
-  headers: {}
 
   constructor: () ->
-    @context = @
+    @context = {}
 
   exposeModule: (name, module) ->
     for method of module
@@ -28,7 +28,7 @@ class server
   expose: (name, func) ->
     @methods[name] = func
 
-  checkAuth: (method, params, headers) ->
+  checkAuth: (method, params, headers, locals) ->
     true
 
   loadModules: (modulesDir, callback) ->
@@ -42,7 +42,7 @@ class server
         callback()
 
 
-  callPush: (req, done) ->
+  callPush: (req, headers, done) ->
     done null, (callback) =>
       method = @methods[req.method]
       requestDone = (result) ->
@@ -54,7 +54,7 @@ class server
         callback null, response
 
       try
-        result = method.execute @context, req.params
+        result = method.execute extend(@context, headers), req.params
       catch error
         if error instanceof Error
           return callback null, rpcError.abstract error.message, -32099, req.id #if method throw common Error
@@ -67,7 +67,7 @@ class server
         requestDone result
 
 
-  getCalls: (requests, afterGenerate) ->
+  getCalls: (requests, headers, afterGenerate) ->
     checkRequestFields = (request) ->
       res = true
       if !request.method
@@ -105,15 +105,15 @@ class server
           return
 
         if request.id
-          @callPush request, done
+          @callPush request, headers, done
         else
           method = @methods[request.method]
           try
-            method.execute @context, request.params
+            method.execute extend(@context, headers), request.params
           finally
-          #nothig there
+            #nothig there
 
-      res = @checkAuth request.method, request.params, @headers
+      res = @checkAuth request.method, request.params, headers
       if typeof res.then is 'function'
         res.then afterAuth
       else
@@ -122,7 +122,7 @@ class server
     async.map requests, iterator, afterGenerate
 
 
-  handleRequest: (json, @headers, reply) ->
+  handleRequest: (json, headers, reply) ->
     try
       requests = JSON.parse(json)
     catch error
@@ -135,7 +135,7 @@ class server
     else if requests.length is 0
       return reply rpcError.invalidRequest()
 
-    @getCalls requests, (error, calls) ->
+    @getCalls requests, headers, (error, calls) ->
       async.parallel calls, (err, response) ->
         if response.length is 0
           return reply null

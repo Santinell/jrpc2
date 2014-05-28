@@ -5,6 +5,7 @@ module.exports = (server) ->
       req.on 'data', (chunk)->
         data += chunk
       req.on 'end', ->
+        req.headers.ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
         server.handleRequest data, req.headers, (answer) ->
           if answer
             res.writeHead 200, {'Content-Type': 'application/json'}

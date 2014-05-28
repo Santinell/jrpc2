@@ -35,10 +35,12 @@ class httpTransport
       listener = @params.framework
     else
       listener = (req, res) ->
+
         data = ""
         req.on 'data', (chunk) ->
           data += chunk
         req.on 'end', ->
+          req.headers.ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
           server.handleRequest data, req.headers, (answer) ->
             #console.log data, req.headers
             #console.log JSON.stringify answer
@@ -57,8 +59,10 @@ class httpTransport
       WebSocketServer = require('ws').Server;
       wss = new WebSocketServer({ server: httpServer });
       wss.on 'connection', (wsConnect) ->
+        req = wsConnect.upgradeReq
         wsConnect.on 'message', (data) ->
-          server.handleRequest data, wsConnect.upgradeReq.headers, (answer) ->
+          req.headers.ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+          server.handleRequest data, req.headers, (answer) ->
             #console.log data
             #console.log JSON.stringify answer
             wsConnect.send JSON.stringify answer
