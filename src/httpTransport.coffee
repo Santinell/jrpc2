@@ -35,7 +35,6 @@ class httpTransport
       listener = @params.framework
     else
       listener = (req, res) ->
-
         data = ""
         req.on 'data', (chunk) ->
           data += chunk

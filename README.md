@@ -12,9 +12,6 @@ Supported protocols:
 + **ZeroMQ**
 + **Express/Connect** middleware.
 
-Features: simple loading of modules; extending of method's scope by change context of server.
-
-
 INSTALL
 =====
 
@@ -40,23 +37,93 @@ Server example:
 
 It's very simple way to load modules. Just put it in one directory.
 
-Example of 'logs' module (./modules/logs.js in this example):
+Example of 'math' module (./modules/math.js in this example):
 
 ```javascript
 
-  var logs = {
-    userLogout: function (timeOnSite, lastPage) {
-      var coll = this.db.collection('logs');
-      coll.insert({ip: this.ip, userId: this.user.userId, addTime: new Date(), 
-        text: "User logout. Spend on site:"+timeOnSite+" sec. Last page: "+lastPage});
+  var math = {
+    sum: function () {
+      var sum = 0;
+      for (var key in arguments) {
+        sum+=arguments[key];
+      }
+      return sum;
     },
-    loginBruteForce: function () {
-      var coll = this.db.collection('logs');
-      coll.insert({ip: this.ip, userId: null, addTime: new Date(), text: "Brute force of login form"});
+    log: function (num, base) {
+      return Math.log(num)/Math.log(base);
     }
   };
 
-  module.exports = logs;
+  module.exports = math;
+```
+
+If you want you can manual expose your methods and modules.
+For async methods you can use promises.
+
+```javascript
+  var fs = require('fs');
+  
+  //lib for promises
+  var Q = require('q');
+
+  server.expose('sayHello',function(){
+    return "Hello!";
+  });  
+ 
+  server.exposeModule('fs',{    
+    readFile: function (file) {
+      var deferred = Q.defer();
+      fs.readFile(file, "utf-8", function (error, text) {
+          if (error) {
+              deferred.reject(new Error(error));
+          } else {
+              deferred.resolve(text);
+          }
+      });
+      return deferred.promise;
+    },
+    writeFile: function (file, data) {
+      var deferred = Q.defer();
+      fs.writeFile(file, data, "utf-8", function (error) {
+          if (error) {
+              deferred.reject(new Error(error));
+          } else {
+              deferred.resolve(true);
+          }
+      });
+      return deferred.promise;
+    }
+  });
+```
+
+For extending methods scope you can set server context.
+By default context already extended by headers.
+
+```javascript
+  ...
+  var mongoose = require('mongoose');
+
+  server.loadModules(__dirname + '/modules/', function () {
+    mongoose.connect('mongodb://127.0.0.1:27017/test', function (err, db) {
+      server.context.mongoose = mongoose;
+      server.context.db = db;   
+      ...
+    }
+  }
+```
+
+And then use this.* in methods:
+
+```javascript
+
+  server.exposeModule('logs', {    
+    loginBruteForce: function () {
+      //this.db from server.context
+      var logs = this.db.collection('logs');
+      //this.ip from headers
+      logs.save({ip: this.ip, addTime: new Date(), text: "Brute force of login form"});
+    }
+  });
 ```
 
 Client example:
@@ -131,95 +198,26 @@ server.loadModules(__dirname + '/modules/', function () {
 
 ```
 
-Complex example of Express/Connect + httpTransport with checkAuth and change of context:
+For support ssl and websocket you can use Express/Connect with httpTransport:
 
-(for async checkAuth you can use promises)
 ```javascript
 
 var rpc = require('jrpc2');
-var url = require('url');
-var mongoose = require('mongoose');
 var express = require('express');
 var server = new rpc.server();
 var app = express();
 
 server.loadModules(__dirname + '/modules/', function () {
-    app.use(rpc.middleware(server));
-    var https = new rpc.httpTransport({
-      framework: app,
-      port: 8443,
-      ssl: true,
-      key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'),
-      cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')
-    });
-    mongoose.connect('mongodb://127.0.0.1:27017/test', function (err, db) {
-        //server.context will be available in methods
-        server.context.mongoose = mongoose;
-        server.context.db = db;
-        //there you can check IP, session ID or login and password of basic auth in headers.
-        //And check whether the user has access to that method
-        server.checkAuth = function (method, params, headers) {
-            if (method === 'users.auth') {//for methods that don't require authorization
-                return true;
-            } else {
-                if (!headers.user)
-                    var cookies = url.parse('?' + (headers.cookie || ''), true).query;
-                    var sessionID = cookies.sessionID || '';
-                    var query = db.collection('users').findOne({session_id: sessionID});
-                    var promise = query.exec(function(err, user) {
-                      if (err)
-                        return false; 
-                      headers.user = user;
-                      return true;
-                    });
-                    return promise;
-            }
-        }
-        https.listen(server);
-    });
-
-});
-```
-
-And now you can use context in your modules (for async methods you can use promises):
-
-```javascript
-
-  var users = {
-    auth: function(login, password) {
-      //this.db from server.context
-      var query = this.db.collection('users').findOne({login: login, password: password});
-      var promise = query.exec(function(err, user) {
-        if (err) {
-          throw new Error('Wrong login or password');
-        }
-        return {sessionId: user.sessionId};
-      });
-      return promise;
-    }
-  };
-
-  module.exports = users;
-```
-
-Https client with auth and notification:
-
-```javascript
-  var rpc = require('jrpc2');
-
-  //ignore self-signed sertificate, remove for production
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-  var https = new rpc.httpTransport({port: 8443, hostname: 'localhost', ssl: true});
-  var client = new rpc.client(https);
-
-  client.call('users.auth', {password: "swd", login: "admin"}, function (err, raw) {
-    var obj = JSON.parse(raw);
-    if (obj.error) {
-        console.log(obj.error.description);
-    } else { //successful auth
-      https.setHeader('Cookie', 'sessionID=' + obj.result.sessionID);
-      client.notify('logs.userLogout', {timeOnSite: 364, lastPage: '/price'});
-    }
+  app.use(rpc.middleware(server)); 
+  var https = new rpc.httpTransport({
+    framework: app,
+    port: 443,
+    websocket: true,
+    ssl: true,
+    key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'),
+    cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')
   });
+  https.listen(server);
+});
+
 ```
