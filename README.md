@@ -9,7 +9,7 @@ JSON-RPC 2.0 library with support of batches and named parameters.
 Supported protocols:
 + **HTTP(S)** + **WebSocket**, **WebSocket Secure**
 + **TCP**
-+ **ZeroMQ**
++ **ZeroMQ** [Santinell/zmqTransport](https://github.com/Santinell/zmqTransport)
 + **Express/Connect** middleware.
 
 INSTALL
@@ -152,32 +152,6 @@ Client example:
     ["admin", "wrong"]
   ];
   client.batch(methods, params, function (err, raw) {
-    console.log(err, raw);
-  });
-```
-
-ZeroMQ server
-
-```javascript
-  var rpc = require('jrpc2');
-
-  var server = new rpc.server;  
-
-  server.loadModules(__dirname + '/modules/', function () {
-    var zmq = new rpc.zmqTransport({url: 'tcp://127.0.0.1:5555'});
-    zmq.listen(server);
-  });
-```
-ZeroMQ client:
-
-```javascript
-  var rpc = require('jrpc2');
-
-  var zmq = new rpc.zmqTransport({url: 'tcp://127.0.0.1:5555'});
-
-  var client = new rpc.client(zmq);
-
-  client.call('users.auth', ["admin","swd"], function (err, raw) {
     console.log(err, raw);
   });
 ```
