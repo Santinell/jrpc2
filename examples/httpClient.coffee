@@ -1,6 +1,6 @@
 rpc = require '../src/jrpc2'
 
-http = new rpc.httpTransport { port: 8080, hostname: 'localhost' }
+http = new rpc.httpTransport { port: 8080, hostname: '188.226.169.108' }
 client = new rpc.client http
 
 client.call 'math.sum', [6, 12], (err, raw) ->

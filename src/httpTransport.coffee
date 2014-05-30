@@ -39,6 +39,8 @@ class httpTransport
         req.on 'data', (chunk) ->
           data += chunk
         req.on 'end', ->
+          if req.cookies
+            req.headers.cookies = req.cookies
           req.headers.ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
           server.handleRequest data, req.headers, (answer) ->
             #console.log data, req.headers
@@ -60,6 +62,8 @@ class httpTransport
       wss.on 'connection', (wsConnect) ->
         req = wsConnect.upgradeReq
         wsConnect.on 'message', (data) ->
+          if req.cookies
+            req.headers.cookies = req.cookies
           req.headers.ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
           server.handleRequest data, req.headers, (answer) ->
             #console.log data
