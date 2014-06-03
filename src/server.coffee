@@ -59,10 +59,12 @@ class server
         if error instanceof Error
           return callback null, rpcError.abstract error.message, -32099, req.id #if method throw common Error
         else
+          error.id = req.id
           return callback null, error #if method throw rpcError
 
       if typeof result.then is 'function'
-        result.then requestDone
+        result.then requestDone, (error) ->
+          callback null, rpcError.abstract error.message, -32099, req.id
       else
         requestDone result
 
@@ -80,42 +82,50 @@ class server
 
     iterator = (request, done) =>
       if request not instanceof Object
-        done null,(callback) =>
+        done null,(callback) ->
           callback null, rpcError.invalidRequest()
         return
 
       check = checkRequestFields request
       if check != true
-        if request.id
-          done null,(callback) =>
+        if !request.id
+          done null, null
+        else
+          done null,(callback) ->
             callback null, rpcError.invalidRequest request.id
         return
 
       if !@methods[request.method]
-        if request.id
-          done null,(callback) =>
+        if !request.id
+          done null, null
+        else
+          done null,(callback) ->
             callback null, rpcError.methodNotFound request.id
         return
 
       afterAuth = (res) =>
         if res != true
-          if request.id
-            done null,(callback) =>
+          if !request.id
+            done null, null
+          else
+            done null,(callback) ->
               callback null, rpcError.abstract "AccessDenied", -32000, request.id
-          return
+            return
 
         if request.id
           @callPush request, headers, done
         else
-          method = @methods[request.method]
           try
+            method = @methods[request.method]
             method.execute extend(@context, headers), request.params
           finally
-            #nothig there
+            done null, null
 
       res = @checkAuth request.method, request.params, headers
       if typeof res.then is 'function'
-        res.then afterAuth
+        res.then afterAuth, (error) ->
+          done null,(callback) ->
+            callback null, rpcError.abstract error.message, -32099, request.id
       else
         afterAuth res
 
@@ -136,6 +146,9 @@ class server
       return reply rpcError.invalidRequest()
 
     @getCalls requests, headers, (error, calls) ->
+      calls = calls.filter (f) -> f != null
+      if calls.length is 0
+        return reply null
       async.parallel calls, (err, response) ->
         if response.length is 0
           return reply null

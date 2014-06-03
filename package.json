@@ -2,7 +2,7 @@
   "author": "Santinell",
   "name": "jrpc2",
   "description": "JSON-RPC 2.0 library with support of batches and named parameters. Supported protocols: HTTP(S), TCP, ZeroMQ + WebSocket, WebSocket Secure + Express/Connect middleware",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "main": "./lib/jrpc2.js",
   "keywords": [
     "json",
