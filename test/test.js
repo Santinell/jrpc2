@@ -1,5 +1,6 @@
 var should = require("chai").should();
 var fs = require("fs");
+var app = require('express')();
 var url = require("url");
 var Q = require("q");
 var rpc = require("../lib/jrpc2");
@@ -518,13 +519,10 @@ describe("tcpClient", function () {
 });
 
 
-
 describe("Express middleware", function () {
 
   it("should correct start express with middleware", function () {
     (function () {
-      var express = require('express');
-      app = express();
       app.use(rpc.middleware(server));
       expressServer = app.listen(8080);
     }).should.not.throw(Error)
@@ -542,16 +540,4 @@ describe("Express middleware", function () {
     httpClient.call("math.log", [4, 12], callback);
   });
 
-  it("should correct works with httpTransport", function (done) {
-    expressServer.close();
-    var httpTransport = new rpc.httpTransport({port:8080, framework: app});
-    httpTransport.listen(server);
-    var callback = function(err, raw){
-      should.not.exist(err);
-      var obj = JSON.parse(raw);
-      obj.should.deep.equal({id: 2, jsonrpc: '2.0', result: 1.6798970175607097});
-      done();
-    };
-    httpClient.call("math.log", [65, 12], callback);
-  });
 });

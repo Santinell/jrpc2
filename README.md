@@ -2,40 +2,62 @@
 
 ![NPM Info](https://nodei.co/npm/jrpc2.png?downloads=true)
 JRPC2
-=====
+======
 
 JSON-RPC 2.0 library with support of batches and named parameters.
 
 Supported protocols:
-+ **HTTP(S)** + **WebSocket**, **WebSocket Secure**
++ **HTTP(S)** 
++ **Socket.IO**
 + **TCP**
 + **ZeroMQ** [Santinell/zmqTransport](https://github.com/Santinell/zmqTransport)
 + **Express/Connect** middleware.
 
 INSTALL
-=====
+=======
 
 ```bash
 npm install jrpc2
 ```
 
 EXAMPLES
-=====
+========
 
-Server example:
+Using as Express/Connect middleware:
 
 ```javascript
-  var rpc = require('jrpc2');
 
-  var server = new rpc.server;
+var rpc = require('jrpc2');
+var app = require('express')();
+var rpcServer = new rpc.server();
 
-  server.loadModules(__dirname + '/modules/', function () {
-    var http = new rpc.httpTransport({port: 8080, websocket: true});
-    http.listen(server);
-  });
+rpcServer.loadModules(__dirname + '/modules/', function () {
+  app.use('/api', rpc.middleware(rpcServer));  
+  app.listen(80);
+});
+
 ```
 
-It's very simple way to load modules. Just put it in one directory.
+Using with Socket.IO and Express/Connect middlewares:
+
+```javascript
+
+var rpc = require('jrpc2');
+var http = require('http');
+var app = require('express')();
+var rpcServer = new rpc.server();
+var httpServer = http.createServer(app);
+var io = require('socket.io')(httpServer);
+
+rpcServer.loadModules(__dirname + '/modules/', function () {
+  app.use('/api', rpc.middleware(rpcServer));
+  io.use(rpc.wsMiddleware(rpcServer));
+  httpServer.listen(80);
+});
+
+```
+
+JSON-RPC modules loaded automatically. Just put it in one directory.
 
 Example of 'math' module (./modules/math.js in this example):
 
@@ -66,11 +88,11 @@ For async methods you can use promises.
   //lib for promises
   var Q = require('q');
 
-  server.expose('sayHello',function(){
+  rpcServer.expose('sayHello',function(){
     return "Hello!";
   });  
  
-  server.exposeModule('fs',{    
+  rpcServer.exposeModule('fs',{    
     readFile: function (file) {
       var deferred = Q.defer();
       fs.readFile(file, "utf-8", function (error, text) {
@@ -103,10 +125,10 @@ By default context already extended by headers.
   ...
   var mongoose = require('mongoose');
 
-  server.loadModules(__dirname + '/modules/', function () {
+  rpcServer.loadModules(__dirname + '/modules/', function () {
     mongoose.connect('mongodb://127.0.0.1:27017/test', function (err, db) {
-      server.context.mongoose = mongoose;
-      server.context.db = db;   
+      rpcServer.context.mongoose = mongoose;
+      rpcServer.context.db = db;   
       ...
     }
   }
@@ -116,9 +138,9 @@ And then use this.* in methods:
 
 ```javascript
 
-  server.exposeModule('logs', {    
+  rpcServer.exposeModule('logs', {    
     loginBruteForce: function () {
-      //this.db from server.context
+      //this.db from rpcServer.context
       var logs = this.db.collection('logs');
       //this.ip from headers
       logs.save({ip: this.ip, addTime: new Date(), text: "Brute force of login form"});
@@ -156,42 +178,3 @@ Client example:
   });
 ```
 
-Using as Express/Connect middleware:
-
-```javascript
-
-var rpc = require('jrpc2');
-var express = require('express');
-var server = new rpc.server();
-var app = express();
-
-server.loadModules(__dirname + '/modules/', function () {
-  app.use(rpc.middleware(server));  
-  app.listen(80);
-});
-
-```
-
-For support ssl and websocket you can use Express/Connect with httpTransport:
-
-```javascript
-
-var rpc = require('jrpc2');
-var express = require('express');
-var server = new rpc.server();
-var app = express();
-
-server.loadModules(__dirname + '/modules/', function () {
-  app.use(rpc.middleware(server)); 
-  var https = new rpc.httpTransport({
-    framework: app,
-    port: 443,
-    websocket: true,
-    ssl: true,
-    key: fs.readFileSync(__dirname + '/keys/ssl-key.pem'),
-    cert: fs.readFileSync(__dirname + '/keys/ssl-cert.pem')
-  });
-  https.listen(server);
-});
-
-```

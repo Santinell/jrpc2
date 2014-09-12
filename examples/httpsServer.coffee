@@ -1,17 +1,22 @@
 rpc = require '../src/jrpc2'
+app = require("express")()
+rpcServer = new rpc.server()
 fs = require 'fs'
 url = require 'url'
+https = require 'https'
 
-server = new rpc.server
+params = {
+  port: 8443
+  ssl: true
+  key: fs.readFileSync __dirname + '/../test/keys/ssl-key.pem'
+  cert: fs.readFileSync __dirname + '/../test/keys/ssl-cert.pem'
+}
 
-server.loadModules __dirname+'/../test/modules/', ->
-  https = new rpc.httpTransport
-    port: 8443
-    ssl: true
-    key: fs.readFileSync __dirname+'/../test/keys/ssl-key.pem'
-    cert: fs.readFileSync __dirname+'/../test/keys/ssl-cert.pem'
+httpsServer = https.createServer params, app
 
-  server.checkAuth = (method, params, headers) ->
+rpcServer.loadModules __dirname+'/../test/modules/', ->
+
+  rpcServer.checkAuth = (method, params, headers) ->
     if method is 'users.auth' #methods that don't require authorization
       return true
     else
@@ -23,6 +28,7 @@ server.loadModules __dirname+'/../test/modules/', ->
       else
         return true
 
+  app.use '/api', rpc.middleware rpcServer
 
-  https.listen server
+  httpsServer.listen()
 

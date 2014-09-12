@@ -4,4 +4,7 @@ exports.client = require './client'
 
 exports.httpTransport = require './httpTransport'
 exports.tcpTransport = require './tcpTransport'
-exports.middleware = require './middleware'
+
+exports.middleware = require('./middlewares').middleware
+exports.httpListener = require('./middlewares').httpListener
+exports.wsMiddleware = require('./middlewares').wsMiddleware

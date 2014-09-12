@@ -1,7 +1,7 @@
 fs = require 'fs'
 async = require 'async'
 extend = require "xtend"
-rpcError = require('./rpcError')
+rpcError = require './rpcError'
 
 Function::execute = (scope, argsList = []) ->
   if argsList instanceof Array
