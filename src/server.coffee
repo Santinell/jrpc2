@@ -33,11 +33,14 @@ class server
 
   loadModules: (modulesDir, callback) ->
     fs.readdir modulesDir, (err, modules) =>
+      check = (str, sub) ->
+        str.indexOf(sub) != -1
       if (!err)
         for moduleFile in modules
-          module = require modulesDir + moduleFile
-          moduleName = moduleFile.replace('.coffee', '').replace('.js', '')
-          @exposeModule moduleName, module
+          if check(moduleFile,'.coffee') || check(moduleFile,'.js')
+            module = require modulesDir + moduleFile
+            moduleName = moduleFile.replace('.coffee', '').replace('.js', '')
+            @exposeModule moduleName, module
       if callback
         callback()
 
@@ -133,10 +136,13 @@ class server
 
 
   handleRequest: (json, headers, reply) ->
-    try
-      requests = JSON.parse(json)
-    catch error
-      return reply rpcError.invalidRequest()
+    if typeof json is "string"
+      try
+        requests = JSON.parse(json)
+      catch error
+        return reply rpcError.invalidRequest()
+    else
+      requests = json
 
     batch = 1
     if requests not instanceof Array

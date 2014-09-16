@@ -6,12 +6,15 @@ JRPC2
 
 JSON-RPC 2.0 library with support of batches and named parameters.
 
-Supported protocols:
-+ **HTTP(S)** 
+Middlewares:
++ **Koa** [Santinell/koa-jrpc2](https://github.com/Santinell/koa-jrpc2)
++ **Express**
 + **Socket.IO**
+Transports:
++ **HTTP**
 + **TCP**
 + **ZeroMQ** [Santinell/zmqTransport](https://github.com/Santinell/zmqTransport)
-+ **Express/Connect** middleware.
+
 
 INSTALL
 =======
@@ -20,10 +23,27 @@ INSTALL
 npm install jrpc2
 ```
 
-EXAMPLES
-========
+SERVER EXAMPLES
+===============
 
-Using as Express/Connect middleware:
+Using with Koa as middleware:
+               
+```javascript
+
+var rpc = require('jrpc2');
+var koaMiddleware = require('koa-jrpc2');
+var _ = require('koa-route');
+var app = require('koa')();
+var rpcServer = new rpc.server();
+
+rpcServer.loadModules(__dirname + '/modules/', function () {
+    app.use(_.post('/api', koaMiddleware(rpcServer)));
+    app.listen(80);
+});
+
+```
+
+Using with Express as middleware:
 
 ```javascript
 
@@ -32,13 +52,13 @@ var app = require('express')();
 var rpcServer = new rpc.server();
 
 rpcServer.loadModules(__dirname + '/modules/', function () {
-  app.use('/api', rpc.middleware(rpcServer));  
+  app.post('/api', rpc.middleware(rpcServer));  
   app.listen(80);
 });
 
 ```
 
-Using with Socket.IO and Express/Connect middlewares:
+Using with Socket.IO and Express middlewares:
 
 ```javascript
 
@@ -50,7 +70,7 @@ var httpServer = http.createServer(app);
 var io = require('socket.io')(httpServer);
 
 rpcServer.loadModules(__dirname + '/modules/', function () {
-  app.use('/api', rpc.middleware(rpcServer));
+  app.post('/api', rpc.middleware(rpcServer));
   io.use(rpc.wsMiddleware(rpcServer));
   httpServer.listen(80);
 });
@@ -79,7 +99,7 @@ Example of 'math' module (./modules/math.js in this example):
   module.exports = math;
 ```
 
-If you want you can manual expose your methods and modules.
+If you want you can manual load your methods and modules.
 For async methods you can use promises.
 
 ```javascript
@@ -148,7 +168,8 @@ And then use this.* in methods:
   });
 ```
 
-Client example:
+CLIENT EXAMPLE
+==============
 
 ```javascript
   var rpc = require('jrpc2');
