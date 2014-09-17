@@ -335,6 +335,7 @@ describe("httpsServer", function () {
 });
 
 
+
 describe("tcpTransport", function () {
 
   it("should throw error because of no params", function () {
@@ -353,18 +354,18 @@ describe("tcpTransport", function () {
   });
 
   it("should throw error because of no server", function () {
-    tcpTransport.params.port = 9000;
+    tcpTransport = new rpc.tcpTransport({port: 9000});
     tcpTransport.params.should.deep.equal({port: 9000});
     tcpTransport.listen.should.throw(Error);
   });
 
-  it("should success listen server", function () {
+  it("should success listen server", function (done) {
     (function () {
       tcpTransport.listen(server);
+      done();
     }).should.not.throw(Error);
   });
 });
-
 
 describe("httpsClient", function () {
 
@@ -448,7 +449,7 @@ describe("tcpClient", function () {
 
   it("should throw error because of no transport", function () {
     (function () {
-      new rpc.client;
+      new rpc.client();
     }).should.throw(Error);
   });
 
@@ -519,6 +520,7 @@ describe("tcpClient", function () {
 });
 
 
+
 describe("Express middleware", function () {
 
   it("should correct start express with middleware", function () {
@@ -530,14 +532,15 @@ describe("Express middleware", function () {
 
   it("should correct works with httpClient", function (done) {
     var httpTransport = new rpc.httpTransport({port:8080});
+    httpTransport.setHeader('Cookie', 'sessionID=' + sessionId);
     httpClient = new rpc.client(httpTransport);
     var callback = function(err, raw){
       should.not.exist(err);
       var obj = JSON.parse(raw);
-      obj.should.deep.equal({id: 1, jsonrpc: '2.0', result: 0.5578858913022596});
+      obj.should.deep.equal({id: 1, jsonrpc: '2.0', result: 16});
       done();
     };
-    httpClient.call("math.log", [4, 12], callback);
+    httpClient.call("sum", [4, 12], callback);
   });
 
 });
