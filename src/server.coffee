@@ -44,6 +44,24 @@ class server
       if callback
         callback()
 
+  localCall: (method_name, params, callback = (->), from_ip = '127.0.0.1') ->
+    @context.ip = from_ip
+    method = @methods[method_name]
+    try
+      result = method.execute @context, params
+    catch error
+      if error instanceof Error
+        return callback error.message
+      else
+        return callback error
+    if typeof result.then is 'function'
+      result.then (res) ->
+        callback null, res
+      , (error) ->
+        callback error.message
+    else
+      callback null, result
+
 
   callPush: (req, headers, done) ->
     done null, (callback) =>
