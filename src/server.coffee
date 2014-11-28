@@ -54,13 +54,21 @@ class server
         return callback error.message
       else
         return callback error
-    if typeof result.then is 'function'
+    if result? && typeof result.then is 'function'
       result.then (res) ->
         callback null, res
       , (error) ->
         callback error.message
     else
       callback null, result
+
+
+  localBatch: (methods, params, final_callback, from_ip = '127.0.0.1') ->
+    list = []
+    for method, i in methods
+      list.push (callback) =>
+        @localCall method, params[i], callback, from_ip
+    async.series list, final_callback
 
 
   callPush: (req, headers, done) ->
@@ -83,7 +91,7 @@ class server
           error.id = req.id
           return callback null, error #if method throw rpcError
 
-      if typeof result.then is 'function'
+      if result? && typeof result.then is 'function'
         result.then requestDone, (error) ->
           callback null, rpcError.abstract error.message, -32099, req.id
       else
@@ -143,7 +151,7 @@ class server
             done null, null
 
       res = @checkAuth request.method, request.params, headers
-      if typeof res.then is 'function'
+      if res? && typeof res.then is 'function'
         res.then afterAuth, (error) ->
           done null,(callback) ->
             callback null, rpcError.abstract error.message, -32099, request.id

@@ -6,6 +6,8 @@ httpListener = (server) ->
     req.on 'end', ->
       if req.cookies
         req.headers.cookies = req.cookies
+      if req.query
+        req.headers.query = req.query
       req.headers.ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
       server.handleRequest data, req.headers, (answer) ->
         if answer
