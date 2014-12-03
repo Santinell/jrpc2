@@ -526,12 +526,12 @@ describe("Express middleware", function () {
   it("should correct start express with middleware", function () {
     (function () {
       app.use(rpc.middleware(server));
-      expressServer = app.listen(8080);
+      expressServer = app.listen(8081);
     }).should.not.throw(Error)
   });
 
   it("should correct works with httpClient", function (done) {
-    var httpTransport = new rpc.httpTransport({port:8080});
+    var httpTransport = new rpc.httpTransport({port:8081});
     httpTransport.setHeader('Cookie', 'sessionID=' + sessionId);
     httpClient = new rpc.client(httpTransport);
     var callback = function(err, raw){

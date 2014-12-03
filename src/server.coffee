@@ -47,6 +47,8 @@ class server
   localCall: (method_name, params, callback = (->), from_ip = '127.0.0.1') ->
     @context.ip = from_ip
     method = @methods[method_name]
+    if !method?
+      return callback "Method not found"
     try
       result = method.execute @context, params
     catch error
@@ -66,8 +68,9 @@ class server
   localBatch: (methods, params, final_callback, from_ip = '127.0.0.1') ->
     list = []
     for method, i in methods
+      param = params[i]
       list.push (callback) =>
-        @localCall method, params[i], callback, from_ip
+        @localCall method, param, callback, from_ip
     async.series list, final_callback
 
 
