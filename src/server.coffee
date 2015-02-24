@@ -3,33 +3,39 @@ async = require 'async'
 extend = require "xtend"
 rpcError = require './rpcError'
 
-Function::execute = (scope, argsList = []) ->
+execute = (func, scope, argsList = []) ->
   if argsList instanceof Array
-    this.apply scope, argsList
+    func.apply scope, argsList
   else
-    args = this.toString().match(/function[^(]*\(([^)]*)\)/)[1].split(/,\s*/)
+    args = func.toString().match(/function[^(]*\(([^)]*)\)/)[1].split(/,\s*/)
     params = [].slice.call argsList, 0, -1
     if params.length < args.length
       for arg in args
         params.push argsList[arg]
-    this.apply(scope, params)
+    func.apply(scope, params)
 
 class server
 
   methods: {}
 
-  constructor: () ->
+  constructor: (@mode = 'callback') ->
     @context = {}
 
-  exposeModule: (name, module) ->
-    for method of module
-      @methods[name + '.' + method] = module[method]
+  checkFunc: (func) ->
+    func.toString().match(/this\.callback\(/) isnt null
 
   expose: (name, func) ->
-    @methods[name] = func
+    if @mode is 'promise' || @checkFunc func
+      @methods[name] = func
+    else
+      throw new Error "In method "+name+", using of this.callback not found"
 
-  checkAuth: (method, params, headers, locals) ->
-    true
+  exposeModule: (module_name, module) ->
+    for method_name of module
+      @expose(module_name+'.'+method_name, module[method_name])
+
+  checkAuth: (call, req, callback) ->
+    callback true
 
   loadModules: (modulesDir, callback) ->
     fs.readdir modulesDir, (err, modules) =>
@@ -44,147 +50,118 @@ class server
       if callback
         callback()
 
-  localCall: (method_name, params, callback = (->), from_ip = '127.0.0.1') ->
-    @context.ip = from_ip
-    method = @methods[method_name]
-    if !method?
-      return callback "Method not found"
+
+  promisedExecute: (method, context, params, callback) ->
     try
-      result = method.execute @context, params
+      result = execute method, context, params
     catch error
-      if error instanceof Error
-        return callback error.message
-      else
-        return callback error
+      callback error
     if result? && typeof result.then is 'function'
       result.then (res) ->
         callback null, res
       , (error) ->
-        callback error.message
+        callback error
     else
       callback null, result
 
+  call: (method_name, params, callback = (->), context = {client_ip: '127.0.0.1'}) ->
+    method = @methods[method_name]
+    if !method?
+      return callback "Method not found"
+    if @mode is 'callback'
+      context.callback = callback
+      execute method, context, params
+    else
+      @promisedExecute method, context, params, callback
 
-  localBatch: (methods, params, final_callback, from_ip = '127.0.0.1') ->
+
+  batch: (methods, params, final_callback, context = {client_ip: '127.0.0.1'}) ->
+    if methods.length != params.length
+      return final_callback new Error("Wrong params"), null
     list = []
     for method, i in methods
       param = params[i]
       list.push (callback) =>
-        @localCall method, param, callback, from_ip
+        @localCall method, param, callback, context
     async.series list, final_callback
 
 
-  callPush: (req, headers, done) ->
-    done null, (callback) =>
-      method = @methods[req.method]
-      requestDone = (result) ->
-        response =
-          jsonrpc: '2.0'
-          result: result || null
-        if req.id
-          response.id = req.id
-        callback null, response
 
-      try
-        result = method.execute extend(@context, headers), req.params
-      catch error
-        if error instanceof Error
-          return callback null, rpcError.abstract error.message, -32099, req.id #if method throw common Error
-        else
-          error.id = req.id
-          return callback null, error #if method throw rpcError
+  getIterator: (req) ->
+    (call, done) =>
 
-      if result? && typeof result.then is 'function'
-        result.then requestDone, (error) ->
-          callback null, rpcError.abstract error.message, -32099, req.id
-      else
-        requestDone result
-
-
-  getCalls: (requests, headers, afterGenerate) ->
-    checkRequestFields = (request) ->
-      res = true
-      if !request.method
-        res = false
-      if !request.jsonrpc
-        res = false
-      if request.jsonrpc != '2.0'
-        res = false
-      res
-
-    iterator = (request, done) =>
-      if request not instanceof Object
-        done null,(callback) ->
-          callback null, rpcError.invalidRequest()
-        return
-
-      check = checkRequestFields request
-      if check != true
-        if !request.id
-          done null, null
-        else
-          done null,(callback) ->
-            callback null, rpcError.invalidRequest request.id
-        return
-
-      if !@methods[request.method]
-        if !request.id
-          done null, null
-        else
-          done null,(callback) ->
-            callback null, rpcError.methodNotFound request.id
-        return
-
-      afterAuth = (res) =>
-        if res != true
-          if !request.id
-            done null, null
+      setError = (error) ->
+        done null, (callback) ->
+          if error instanceof Error
+            error = rpcError.abstract error.message, -32099, call.id
           else
-            done null,(callback) ->
-              callback null, rpcError.abstract "AccessDenied", -32000, request.id
-            return
+            error.id = call.id
+          callback null, error
 
-        if request.id
-          @callPush request, headers, done
+      setSuccess = (result) ->
+        done null, (callback) ->
+          response =
+            jsonrpc: '2.0'
+            result: result || null
+            id: call.id
+          callback null, response
+
+      setResult = (err, result) ->
+        if !call.id?
+          done null, null
         else
-          try
-            method = @methods[request.method]
-            method.execute extend(@context, headers), request.params
-          finally
-            done null, null
+          if err?
+            setError err
+          else
+            setSuccess result
 
-      res = @checkAuth request.method, request.params, headers
-      if res? && typeof res.then is 'function'
-        res.then afterAuth, (error) ->
-          done null,(callback) ->
-            callback null, rpcError.abstract error.message, -32099, request.id
-      else
-        afterAuth res
+      context = {}
+      if @mode is 'callback'
+        context.callback = setResult
+      extend context, req, @context
 
-    async.map requests, iterator, afterGenerate
+      if call not instanceof Object
+        return setError rpcError.invalidRequest()
+
+      if !call.method || !call.jsonrpc || call.jsonrpc != '2.0'
+        return setError rpcError.invalidRequest call.id
+
+      if !@methods[call.method]
+        return setError rpcError.methodNotFound call.id
+
+      method = @methods[call.method]
+      @checkAuth.call context, call, req, (trusted) =>
+        if !trusted
+          return setResult rpcError.abstract "AccessDenied", -32000, call.id
+
+        if @mode is 'callback'
+          execute method, context, call.params
+        else
+          @promisedExecute method, context, call.params, setResult
 
 
-  handleRequest: (json, headers, reply) ->
+
+  handleCall: (json, req, reply) ->
     if typeof json is "string"
       try
-        requests = JSON.parse(json)
+        calls = JSON.parse json
       catch error
         return reply rpcError.invalidRequest()
     else
-      requests = json
+      calls = json
 
     batch = 1
-    if requests not instanceof Array
-      requests = [requests]
+    if calls not instanceof Array
+      calls = [calls]
       batch = 0
-    else if requests.length is 0
+    else if calls.length is 0
       return reply rpcError.invalidRequest()
 
-    @getCalls requests, headers, (error, calls) ->
-      calls = calls.filter (f) -> f != null
-      if calls.length is 0
+    async.map calls, @getIterator(req), (error, funcs) ->
+      funcs = funcs.filter (f) -> f != null
+      if funcs.length is 0
         return reply null
-      async.parallel calls, (err, response) ->
+      async.parallel funcs, (err, response) ->
         if response.length is 0
           return reply null
         if !batch && response instanceof Array

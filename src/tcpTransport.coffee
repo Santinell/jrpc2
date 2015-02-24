@@ -10,26 +10,21 @@ class tcpTransport
     client = net.connect @params, ->
       client.write JSON.stringify body
     client.on 'error', (e) ->
-      if callback
-        callback e, null
+      callback e, null if callback
     client.on 'timeout', ->
-      if callback
-        callback new Error('TimeoutError'), null
+      callback new Error('TimeoutError'), null if callback
       client.end()
     client.on 'data', (data) ->
-      if callback
-        callback null, data.toString()
+      callback null, data.toString() if callback
       client.end()
 
   listen: (server) ->
     tcpServer = net.createServer (socket) ->
       socket.on 'error', -> socket.end()
       socket.on 'data', (data)->
-        server.handleRequest data.toString(), {ip: socket.remoteAddress}, (answer) ->
-          #console.log data.toString()
-          #console.log answer
-          if answer
-            socket.write JSON.stringify answer
+        ip = socket.remoteAddress.replace('::ffff:','')
+        server.handleCall data.toString(), {client_ip: ip}, (answer) ->
+          socket.write JSON.stringify answer if answer
     tcpServer.listen @params.port
 
 
