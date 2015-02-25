@@ -35,17 +35,18 @@
   },
   "readmeFilename": "README.md",
   "dependencies": {
-    "async": "~0.9",
-    "xtend": "~4.0"
+    "async": "^0.9",
+    "xtend": "^4.0"
   },
   "devDependencies": {
-    "coffee-script": "~1.1",
-    "mocha": "~2.1",
-    "chai": "~2.0",
-    "coveralls": "~2.11",
-    "istanbul": "~0.3",
-    "mocha-lcov-reporter": "~0",
-    "express": "~4.11"
+    "q": "^1.2",
+    "coffee-script": "^1.1",
+    "mocha": "^2.1",
+    "chai": "^2.0",
+    "coveralls": "^2.11",
+    "istanbul": "^0.3",
+    "mocha-lcov-reporter": "^0",
+    "express": "^4.11"
   },
   "repository": {
     "type": "git",
