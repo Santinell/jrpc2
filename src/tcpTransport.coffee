@@ -18,14 +18,18 @@ class tcpTransport
       callback null, data.toString() if callback
       client.end()
 
+  close: () ->
+    if @tcpServer
+      @tcpServer.close()
+
   listen: (server) ->
-    tcpServer = net.createServer (socket) ->
+    @tcpServer = net.createServer (socket) ->
       socket.on 'error', -> socket.end()
       socket.on 'data', (data)->
         ip = socket.remoteAddress.replace('::ffff:','')
         server.handleCall data.toString(), {client_ip: ip}, (answer) ->
           socket.write JSON.stringify answer if answer
-    tcpServer.listen @params.port
+    @tcpServer.listen @params.port
 
 
 module.exports = tcpTransport

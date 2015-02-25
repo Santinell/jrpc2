@@ -27,7 +27,7 @@ class client
       req.push @request method, params[i]
     @transport.send req, callback
 
-  call: (method, params, callback) ->
+  invoke: (method, params, callback) ->
     req = @request method, params
     @transport.send req, callback
 

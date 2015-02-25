@@ -29,12 +29,17 @@ class httpTransport
           callback e, null
     req.end JSON.stringify(body)
 
+
+  close: () ->
+    if @httpServer
+      @httpServer.close()
+
   listen: (server) ->
     listener = rpc.httpListener server
     if @params.ssl
-      httpServer = @http.createServer @params, listener
+      @httpServer = @http.createServer @params, listener
     else
-      httpServer = @http.createServer listener
-    httpServer.listen @params.port
+      @httpServer = @http.createServer listener
+    @httpServer.listen @params.port
 
 module.exports = httpTransport

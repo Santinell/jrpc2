@@ -62,9 +62,12 @@ class server
       , (error) ->
         callback error
     else
-      callback null, result
+      if result instanceof Error
+        callback result
+      else
+        callback null, result
 
-  call: (method_name, params, callback = (->), context = {client_ip: '127.0.0.1'}) ->
+  invoke: (method_name, params, context = {client_ip: '127.0.0.1'}, callback = (->)) ->
     method = @methods[method_name]
     if !method?
       return callback "Method not found"
@@ -75,27 +78,26 @@ class server
       @promisedExecute method, context, params, callback
 
 
-  batch: (methods, params, final_callback, context = {client_ip: '127.0.0.1'}) ->
+  batch: (methods, params, context = {client_ip: '127.0.0.1'}, final_callback = (->)) ->
     if methods.length != params.length
       return final_callback new Error("Wrong params"), null
     list = []
     for method, i in methods
       param = params[i]
       list.push (callback) =>
-        @localCall method, param, callback, context
+        @invoke method, param, context, callback
     async.series list, final_callback
 
 
 
   getIterator: (req) ->
     (call, done) =>
-
       setError = (error) ->
         done null, (callback) ->
           if error instanceof Error
-            error = rpcError.abstract error.message, -32099, call.id
+            error = rpcError.abstract error.message, -32099, call.id || null
           else
-            error.id = call.id
+            error.id = call.id || null
           callback null, error
 
       setSuccess = (result) ->
@@ -103,7 +105,7 @@ class server
           response =
             jsonrpc: '2.0'
             result: result || null
-            id: call.id
+            id: call.id || null
           callback null, response
 
       setResult = (err, result) ->
