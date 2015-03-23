@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/Santinell/jrpc2.svg?branch=master)](https://travis-ci.org/Santinell/jrpc2) [![Coverage Status](https://coveralls.io/repos/Santinell/jrpc2/badge.png)](https://coveralls.io/r/Santinell/jrpc2)
 
 ![NPM Info](https://nodei.co/npm/jrpc2.png?downloads=true)
+
 JRPC2
 ======
 
@@ -137,10 +138,10 @@ Use first parameter with 'promise' value when instantiating the class rpc.server
   ...
   var rpcServer = new rpc.server('promise');
   var request = require('request');
-  var Q = require('q');
+  var vow = require('vow');
 
   rpcServer.expose('wget', function(url){
-    return Q.Promise(function(resolve, reject) {
+    return new vow.Promise(function(resolve, reject) {
       request(url, function (error, response, body) {
         if (!error && response.statusCode == 200)
           resolve(body);

@@ -3,7 +3,7 @@ async = require 'async'
 extend = require "xtend"
 rpcError = require './rpcError'
 
-execute = (func, scope, argsList = []) ->
+execute = (scope, func, argsList = []) ->
   if argsList instanceof Array
     func.apply scope, argsList
   else
@@ -31,8 +31,10 @@ class server
       throw new Error "In method "+name+", using of this.callback not found"
 
   exposeModule: (module_name, module) ->
-    for method_name of module
-      @expose(module_name+'.'+method_name, module[method_name])
+    for element_name of module
+      if typeof module[element_name] is 'function' && method_name isnt 'constructor'
+        @expose(module_name+'.'+element_name, module[element_name])
+    return
 
   checkAuth: (call, req, callback) ->
     callback true
@@ -51,9 +53,9 @@ class server
         callback()
 
 
-  promisedExecute: (method, context, params, callback) ->
+  promisedExecute: (method, params, callback) ->
     try
-      result = execute method, context, params
+      result = execute {}, method, params
     catch error
       callback error
     if result? && typeof result.then is 'function'
@@ -67,25 +69,24 @@ class server
       else
         callback null, result
 
-  invoke: (method_name, params, context = {client_ip: '127.0.0.1'}, callback = (->)) ->
+  invoke: (method_name, params, callback = (->)) ->
     method = @methods[method_name]
     if !method?
       return callback "Method not found"
     if @mode is 'callback'
-      context.callback = callback
-      execute method, context, params
+      execute {"callback": callback}, method, params
     else
-      @promisedExecute method, context, params, callback
+      @promisedExecute method, params, callback
 
 
-  batch: (methods, params, context = {client_ip: '127.0.0.1'}, final_callback = (->)) ->
+  batch: (methods, params, final_callback = (->)) ->
     if methods.length != params.length
       return final_callback new Error("Wrong params"), null
     list = []
     for method, i in methods
       param = params[i]
       list.push (callback) =>
-        @invoke method, param, context, callback
+        @invoke method, param, callback
     async.series list, final_callback
 
 
@@ -120,7 +121,7 @@ class server
       context = {}
       if @mode is 'callback'
         context.callback = setResult
-      extend context, req, @context
+      context = extend context, req, @context
 
       if call not instanceof Object
         return setError rpcError.invalidRequest()
