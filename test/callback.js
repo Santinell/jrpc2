@@ -111,7 +111,7 @@ describe("Server", function () {
     server.methods.should.have.property("getName");
     server.methods["getName"].should.be.an["instanceof"](Function);
     var context = {name: "Ted"};
-    server.invoke("getName", [], context, function(err, res){
+    server.invoke(context, "getName", [], function(err, res){
       should.equal(err, null);
       res.should.equal("Ted");
       done()
@@ -124,7 +124,7 @@ describe("Server", function () {
       this.callback();
     });
     server.methods.should.have.property("console");
-    server.invoke("console", ["Hello server"], function(err, res){
+    server.invoke({},"console", ["Hello server"], function(err, res){
       should.equal(err, undefined);
       should.equal(res, undefined);
     });
@@ -136,7 +136,7 @@ describe("Server", function () {
       [1, 9],
       [10, 12]
     ];
-    server.batch(methods, params, {}, function(err, res){
+    server.batch({}, methods, params, function(err, res){
       console.log(err, res);
       should.equal(err, undefined);
       res.should.deep.equal([0.9266284080291269, 0.9266284080291269]);

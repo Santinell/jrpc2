@@ -53,9 +53,9 @@ class server
         callback()
 
 
-  promisedExecute: (method, params, callback) ->
+  promisedExecute: (context, method, params, callback) ->
     try
-      result = execute {}, method, params
+      result = execute context, method, params
     catch error
       callback error
     if result? && typeof result.then is 'function'
@@ -69,24 +69,25 @@ class server
       else
         callback null, result
 
-  invoke: (method_name, params, callback = (->)) ->
+  invoke: (context, method_name, params, callback = (->)) ->
     method = @methods[method_name]
     if !method?
       return callback "Method not found"
     if @mode is 'callback'
-      execute {"callback": callback}, method, params
+      context.callback = callback
+      execute context, method, params
     else
-      @promisedExecute method, params, callback
+      @promisedExecute context, method, params, callback
 
 
-  batch: (methods, params, final_callback = (->)) ->
+  batch: (context, methods, params, final_callback = (->)) ->
     if methods.length != params.length
       return final_callback new Error("Wrong params"), null
     list = []
     for method, i in methods
       param = params[i]
       list.push (callback) =>
-        @invoke method, param, callback
+        @invoke context, method, param, callback
     async.series list, final_callback
 
 
@@ -138,9 +139,9 @@ class server
           return setResult rpcError.abstract "AccessDenied", -32000, call.id
 
         if @mode is 'callback'
-          execute method, context, call.params
+          execute context, method, call.params
         else
-          @promisedExecute method, context, call.params, setResult
+          @promisedExecute context, method, call.params, setResult
 
 
 
