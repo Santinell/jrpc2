@@ -32,7 +32,7 @@ class server
 
   exposeModule: (module_name, module) ->
     for element_name of module
-      if typeof module[element_name] is 'function' && method_name isnt 'constructor'
+      if typeof module[element_name] is 'function' && element_name isnt 'constructor'
         @expose(module_name+'.'+element_name, module[element_name])
     return
 
