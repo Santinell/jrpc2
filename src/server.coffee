@@ -16,10 +16,9 @@ execute = (scope, func, argsList = []) ->
 
 class server
 
-  methods: {}
-
   constructor: (@mode = 'callback') ->
-    @context = {}
+    @methods = {}
+    @context = { methods: @methods }
 
   checkFunc: (func) ->
     func.toString().match(/this\.callback\(/) isnt null
@@ -119,10 +118,10 @@ class server
           else
             setSuccess result
 
-      context = {}
+      context = {req: req}
       if @mode is 'callback'
         context.callback = setResult
-      context = extend context, req, @context
+      context = extend context, @context
 
       if call not instanceof Object
         return setError rpcError.invalidRequest()

@@ -175,8 +175,8 @@ And then use this.* in methods:
     loginBruteForce: function () {
       //this.db from rpcServer.context
       var logs = this.db.collection('logs');
-      //this.client_ip from headers
-      logs.save({ip: this.client_ip, addTime: new Date(), text: "Brute force of login form"});
+      //this.req.client_ip from headers
+      logs.save({ip: this.req.client_ip, addTime: new Date(), text: "Brute force of login form"});
       this.callback();
     }
   });
