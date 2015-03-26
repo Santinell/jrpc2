@@ -2,7 +2,7 @@
   "author": "Santinell",
   "name": "jrpc2",
   "description": "JSON-RPC 2.0 library with support of batches and named parameters. Features: Express, Koa, Socket.IO middlewares + HTTP, TCP, ZeroMQ transports",
-  "version": "1.0.0-beta",
+  "version": "1.0.0-beta2",
   "main": "./lib/jrpc2.js",
   "keywords": [
     "json",
@@ -39,7 +39,7 @@
     "xtend": "^4.0"
   },
   "devDependencies": {
-    "q": "^1.2",
+    "vow": "^0.4",
     "coffee-script": "^1.1",
     "mocha": "^2.1",
     "chai": "^2.0",

@@ -3,39 +3,42 @@ async = require 'async'
 extend = require "xtend"
 rpcError = require './rpcError'
 
-execute = (scope, func, argsList = []) ->
-  if argsList instanceof Array
-    func.apply scope, argsList
-  else
-    args = func.toString().match(/function[^(]*\(([^)]*)\)/)[1].split(/,\s*/)
-    params = [].slice.call argsList, 0, -1
-    if params.length < args.length
-      for arg in args
-        params.push argsList[arg]
-    func.apply(scope, params)
-
 class server
 
   constructor: (@mode = 'callback') ->
     @methods = {}
-    @context = { methods: @methods }
+    @modules = {}
+    @method_args = {}
+    @context = {}
 
-  checkFunc: (func) ->
-    func.toString().match(/this\.callback\(/) isnt null
+  fillArgs: (name, func) ->
+    args = func.toString().match(/function[^(]*\(([^)]*)\)/)[1]
+    @method_args[name] = if args then args.split(/,\s*/) else []
 
   expose: (name, func) ->
-    if @mode is 'promise' || @checkFunc func
-      @methods[name] = func
-    else
-      throw new Error "In method "+name+", using of this.callback not found"
+    @methods[name] = func
+    @fillArgs name, func
 
   exposeModule: (module_name, module) ->
+    @modules[module_name] = module
     for element_name of module
       if typeof module[element_name] is 'function' && element_name isnt 'constructor'
-        @expose(module_name+'.'+element_name, module[element_name])
+        @fillArgs module_name+'.'+element_name, module[element_name]
     return
 
-  checkAuth: (call, req, callback) ->
+  getMethod: (name) ->
+    if ~name.indexOf('.')
+      [module, method_name] = name.split "."
+      if @modules[module]? && @modules[module][method_name]?
+        [@modules[module], @modules[module][method_name]]
+      else
+        false
+    else if @methods[name]?
+      [null, @methods[name]]
+    else
+      false
+
+  checkAuth: (call, callback) ->
     callback true
 
   loadModules: (modulesDir, callback) ->
@@ -52,9 +55,20 @@ class server
         callback()
 
 
-  promisedExecute: (context, method, params, callback) ->
+  invoke: (context, method_name, params = [], callback = ->) ->
+    [module, method] = @getMethod method_name
+    if !method
+      return callback rpcError.methodNotFound()
+    result = null
     try
-      result = execute context, method, params
+      if params instanceof Array
+        result = method.apply extend(module, context), params
+      else
+        arg_names = @method_args[method_name]
+        args = []
+        for name in arg_names
+          args.push params[name]
+        result = method.apply context, args
     catch error
       callback error
     if result? && typeof result.then is 'function'
@@ -67,16 +81,6 @@ class server
         callback result
       else
         callback null, result
-
-  invoke: (context, method_name, params, callback = (->)) ->
-    method = @methods[method_name]
-    if !method?
-      return callback "Method not found"
-    if @mode is 'callback'
-      context.callback = callback
-      execute context, method, params
-    else
-      @promisedExecute context, method, params, callback
 
 
   batch: (context, methods, params, final_callback = (->)) ->
@@ -118,29 +122,19 @@ class server
           else
             setSuccess result
 
-      context = {req: req}
-      if @mode is 'callback'
-        context.callback = setResult
-      context = extend context, @context
-
       if call not instanceof Object
         return setError rpcError.invalidRequest()
 
       if !call.method || !call.jsonrpc || call.jsonrpc != '2.0'
         return setError rpcError.invalidRequest call.id
 
-      if !@methods[call.method]
-        return setError rpcError.methodNotFound call.id
+      context = extend {req: req}, @context
 
-      method = @methods[call.method]
-      @checkAuth.call context, call, req, (trusted) =>
+      @checkAuth.call context, call, (trusted) =>
         if !trusted
           return setResult rpcError.abstract "AccessDenied", -32000, call.id
 
-        if @mode is 'callback'
-          execute context, method, call.params
-        else
-          @promisedExecute context, method, call.params, setResult
+        @invoke context, call.method, call.params, setResult
 
 
 
