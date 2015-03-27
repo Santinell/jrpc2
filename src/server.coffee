@@ -1,42 +1,38 @@
 fs = require 'fs'
 async = require 'async'
-extend = require "xtend"
 rpcError = require './rpcError'
 
 class server
 
   constructor: (@mode = 'callback') ->
     @methods = {}
-    @modules = {}
     @method_args = {}
-    @context = {}
-
-  fillArgs: (name, func) ->
-    args = func.toString().match(/function[^(]*\(([^)]*)\)/)[1]
-    @method_args[name] = if args then args.split(/,\s*/) else []
+    @module_context = {}
 
   expose: (name, func) ->
     @methods[name] = func
-    @fillArgs name, func
+    args = func.toString().match(/function[^(]*\(([^)]*)\)/)[1]
+    @method_args[name] = if args then args.split(/,\s*/) else []
+
+  setModuleContext: (module_name, module) ->
+    context = {}
+    for prop of module
+      context[prop] = module[prop]
+    @module_context[module_name] = context
+
+  getMethodContext: (method_name) ->
+    context = {}
+    if ~method_name.indexOf('.')
+      [module_name, _] = method_name.split '.'
+      context = @module_context[module_name]
+    return context
 
   exposeModule: (module_name, module) ->
-    @modules[module_name] = module
+    @setModuleContext module_name, module
     for element_name of module
       if typeof module[element_name] is 'function' && element_name isnt 'constructor'
-        @fillArgs module_name+'.'+element_name, module[element_name]
+        @expose module_name+'.'+element_name, module[element_name]
     return
-
-  getMethod: (name) ->
-    if ~name.indexOf('.')
-      [module, method_name] = name.split "."
-      if @modules[module]? && @modules[module][method_name]?
-        [@modules[module], @modules[module][method_name]]
-      else
-        false
-    else if @methods[name]?
-      [null, @methods[name]]
-    else
-      false
 
   checkAuth: (call, callback) ->
     callback true
@@ -54,15 +50,16 @@ class server
       if callback
         callback()
 
-
-  invoke: (context, method_name, params = [], callback = ->) ->
-    [module, method] = @getMethod method_name
-    if !method
+  invoke: (req, method_name, params = [], callback = ->) ->
+    if !@methods[method_name]
       return callback rpcError.methodNotFound()
+    method = @methods[method_name]
+    context = @getMethodContext method_name
+    context.req = req
     result = null
     try
       if params instanceof Array
-        result = method.apply extend(module, context), params
+        result = method.apply context, params
       else
         arg_names = @method_args[method_name]
         args = []
@@ -83,17 +80,15 @@ class server
         callback null, result
 
 
-  batch: (context, methods, params, final_callback = (->)) ->
+  batch: (req, methods, params, final_callback = (->)) ->
     if methods.length != params.length
       return final_callback new Error("Wrong params"), null
     list = []
     for method, i in methods
       param = params[i]
       list.push (callback) =>
-        @invoke context, method, param, callback
+        @invoke req, method, param, callback
     async.series list, final_callback
-
-
 
   getIterator: (req) ->
     (call, done) =>
@@ -128,13 +123,14 @@ class server
       if !call.method || !call.jsonrpc || call.jsonrpc != '2.0'
         return setError rpcError.invalidRequest call.id
 
-      context = extend {req: req}, @context
+      if !@methods[call.method]
+        return setError rpcError.methodNotFound call.id
 
-      @checkAuth.call context, call, (trusted) =>
+      @checkAuth.call {req: req}, call, (trusted) =>
         if !trusted
           return setResult rpcError.abstract "AccessDenied", -32000, call.id
 
-        @invoke context, call.method, call.params, setResult
+        @invoke req, call.method, call.params, setResult
 
 
 
