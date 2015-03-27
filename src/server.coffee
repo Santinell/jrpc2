@@ -1,5 +1,6 @@
 fs = require 'fs'
 async = require 'async'
+extend = require 'xtend'
 rpcError = require './rpcError'
 
 class server
@@ -8,6 +9,7 @@ class server
     @methods = {}
     @method_args = {}
     @module_context = {}
+    @context = {}
 
   expose: (name, func) ->
     @methods[name] = func
@@ -21,7 +23,7 @@ class server
     @module_context[module_name] = context
 
   getMethodContext: (method_name) ->
-    context = {}
+    context = extend {}, @context
     if ~method_name.indexOf('.')
       [module_name, _] = method_name.split '.'
       context = @module_context[module_name]
