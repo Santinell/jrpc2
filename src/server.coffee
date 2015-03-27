@@ -23,11 +23,11 @@ class server
     @module_context[module_name] = context
 
   getMethodContext: (method_name) ->
-    context = extend {}, @context
+    context = {}
     if ~method_name.indexOf('.')
       [module_name, _] = method_name.split '.'
       context = @module_context[module_name]
-    return context
+    return extend(context, @context)
 
   exposeModule: (module_name, module) ->
     @setModuleContext module_name, module
