@@ -36,7 +36,7 @@ class server
         @expose module_name+'.'+element_name, module[element_name]
     return
 
-  checkAuth: (call, callback) ->
+  checkAuth: (call, req, callback) ->
     callback true
 
   loadModules: (modulesDir, callback) ->
@@ -128,7 +128,7 @@ class server
       if !@methods[call.method]
         return setError rpcError.methodNotFound call.id
 
-      @checkAuth.call {req: req}, call, (trusted) =>
+      @checkAuth call, req, (trusted) =>
         if !trusted
           return setResult rpcError.abstract "AccessDenied", -32000, call.id
 
