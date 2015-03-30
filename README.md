@@ -36,7 +36,7 @@ var rpc = require('jrpc2');
 var koaMiddleware = require('koa-jrpc2');
 var route = require('koa-route');
 var app = require('koa')();
-var rpcServer = new rpc.server();
+var rpcServer = new rpc.Server();
 
 rpcServer.loadModules(__dirname + '/modules/', function () {
     app.use(route.post('/api', koaMiddleware(rpcServer)));
@@ -51,7 +51,7 @@ Using with Express as middleware:
 
 var rpc = require('jrpc2');
 var app = require('express')();
-var rpcServer = new rpc.server();
+var rpcServer = new rpc.Server();
 
 rpcServer.loadModules(__dirname + '/modules/', function () {
   app.post('/api', rpc.middleware(rpcServer));  
@@ -67,7 +67,7 @@ Using with Socket.IO and Express middlewares:
 var rpc = require('jrpc2');
 var http = require('http');
 var app = require('express')();
-var rpcServer = new rpc.server();
+var rpcServer = new rpc.Server();
 var httpServer = http.createServer(app);
 var io = require('socket.io')(httpServer);
 
@@ -91,10 +91,10 @@ Example of 'math' module (./modules/math.js in this example):
       for (var key in arguments) {
         sum+=arguments[key];
       }
-      this.callback(null, sum);
+      return Promise.resolve(sum);
     },
     log: function (num, base) {
-      this.callback(null, Math.log(num)/Math.log(base));
+      return Promise.resolve(Math.log(num)/Math.log(base));
     }
   };
 ```
@@ -103,52 +103,34 @@ If you want you can manual load your methods and modules.
 
 ```javascript
   ...
-  var rpcServer = new rpc.server();
+  var rpcServer = new rpc.Server();
   var fs = require('fs');
 
   rpcServer.expose('sayHello',function(){
-    this.callback(null, "Hello!");
+    return Promise.resolve("Hello!");
   });  
 
   rpcServer.exposeModule('fs',{
     readFile: function (file) {
-      fs.readFile(file, "utf-8", function (error, text) {
-        if (error)
-          this.callback(new Error(error));
-        else
-          this.callback(null, text);
+      return new Promise(function (resolve, reject) {
+        fs.readFile(file, "utf-8", function (error, text) {
+          if (error)
+            reject(new Error(error));
+          else
+            resolve(text);
+        });
       });
     },
     writeFile: function (file, data) {
-      fs.writeFile(file, data, "utf-8", function (error) {
-        if (error)
-          this.callback(new Error(error));
-        else
-          this.callback(null, true);
+      return new Promise(function (resolve, reject) {
+        fs.writeFile(file, data, "utf-8", function (error) {
+          if (error)
+            reject(new Error(error);
+          else
+            resolve(true);
+        });
       });
     }
-  });
-```
-
-By default server using "callback" mode. (this.callback for return result)
-But if you want - you can use Promises (any library that used .than(resolve, reject))
-
-Use first parameter with 'promise' value when instantiating the class rpc.server:
-```javascript
-  ...
-  var rpcServer = new rpc.server('promise');
-  var request = require('request');
-  var vow = require('vow');
-
-  rpcServer.expose('wget', function(url){
-    return new vow.Promise(function(resolve, reject) {
-      request(url, function (error, response, body) {
-        if (!error && response.statusCode == 200)
-          resolve(body);
-        else
-          reject(error);
-      });
-    });
   });
 ```
 
@@ -177,7 +159,7 @@ And then use this.* in methods:
       var logs = this.db.collection('logs');
       //this.req.client_ip from headers
       logs.save({ip: this.req.client_ip, addTime: new Date(), text: "Brute force of login form"});
-      this.callback();
+      return Promise.resolve();
     }
   });
 ```
@@ -190,10 +172,10 @@ CLIENT EXAMPLE
 
   var http = new rpc.httpTransport({port: 8080, hostname: 'localhost'});
 
-  var client = new rpc.client(http);
+  var client = new rpc.Client(http);
 
   //single call with named parameters
-  client.call('users.auth', {password: "swd", login: "admin"}, function (err, raw) {
+  client.invoke('users.auth', {password: "swd", login: "admin"}, function (err, raw) {
     console.log(err, raw);
   });
 

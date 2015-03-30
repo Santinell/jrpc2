@@ -3,37 +3,37 @@ async = require 'async'
 extend = require 'xtend'
 rpcError = require './rpcError'
 
-class server
+class Server
 
   constructor: (@mode = 'callback') ->
     @methods = {}
-    @method_args = {}
-    @module_context = {}
+    @methodArgs = {}
+    @moduleContext = {}
     @context = {}
 
   expose: (name, func) ->
     @methods[name] = func
     args = func.toString().match(/function[^(]*\(([^)]*)\)/)[1]
-    @method_args[name] = if args then args.split(/,\s*/) else []
+    @methodArgs[name] = if args then args.split(/,\s*/) else []
 
-  setModuleContext: (module_name, module) ->
+  setModuleContext: (moduleName, module) ->
     context = {}
     for prop of module
       context[prop] = module[prop]
-    @module_context[module_name] = context
+    @moduleContext[moduleName] = context
 
-  getMethodContext: (method_name) ->
+  getMethodContext: (methodName) ->
     context = {}
-    if ~method_name.indexOf('.')
-      [module_name, _] = method_name.split '.'
-      context = @module_context[module_name]
+    if ~methodName.indexOf('.')
+      [moduleName, _] = methodName.split '.'
+      context = @moduleContext[moduleName]
     return extend(context, @context)
 
-  exposeModule: (module_name, module) ->
-    @setModuleContext module_name, module
-    for element_name of module
-      if typeof module[element_name] is 'function' && element_name isnt 'constructor'
-        @expose module_name+'.'+element_name, module[element_name]
+  exposeModule: (moduleName, module) ->
+    @setModuleContext moduleName, module
+    for elementName of module
+      if typeof module[elementName] is 'function' && elementName isnt 'constructor'
+        @expose moduleName+'.'+elementName, module[elementName]
     return
 
   checkAuth: (call, req, callback) ->
@@ -52,20 +52,20 @@ class server
       if callback
         callback()
 
-  invoke: (req, method_name, params = [], callback = ->) ->
-    if !@methods[method_name]
+  invoke: (req, methodName, params = [], callback = ->) ->
+    if !@methods[methodName]
       return callback rpcError.methodNotFound()
-    method = @methods[method_name]
-    context = @getMethodContext method_name
+    method = @methods[methodName]
+    context = @getMethodContext methodName
     context.req = req
     result = null
     try
       if params instanceof Array
         result = method.apply context, params
       else
-        arg_names = @method_args[method_name]
+        argNames = @methodArgs[methodName]
         args = []
-        for name in arg_names
+        for name in argNames
           args.push params[name]
         result = method.apply context, args
     catch error
@@ -82,15 +82,15 @@ class server
         callback null, result
 
 
-  batch: (req, methods, params, final_callback = (->)) ->
+  batch: (req, methods, params, finalCallback = (->)) ->
     if methods.length != params.length
-      return final_callback new Error("Wrong params"), null
+      return finalCallback new Error("Wrong params"), null
     list = []
     for method, i in methods
       param = params[i]
       list.push (callback) =>
         @invoke req, method, param, callback
-    async.series list, final_callback
+    async.series list, finalCallback
 
   getIterator: (req) ->
     (call, done) =>
@@ -164,4 +164,4 @@ class server
         reply response
 
 
-module.exports = server
+module.exports = Server

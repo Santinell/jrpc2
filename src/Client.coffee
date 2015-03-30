@@ -1,4 +1,4 @@
-class client
+class Client
 
   id: 0
 
@@ -32,4 +32,4 @@ class client
     @transport.send req, callback
 
 
-module.exports = client
+module.exports = Client

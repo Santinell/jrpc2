@@ -16,7 +16,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 describe("RPC Core", function () {
   it("should have a Client, Server, rpcError and transports", function () {
-    rpc.should.respondTo("server", "client", "httpTransport", "tcpTransport", "rpcError");
+    rpc.should.respondTo("Server", "Client", "httpTransport", "tcpTransport", "rpcError");
   });
 });
 
@@ -72,10 +72,10 @@ describe("rpcError", function () {
 describe("Server", function () {
 
   it("should have some fields", function () {
-    server = new rpc.server();
+    server = new rpc.Server();
     server.should.have.property("methods");
-    server.should.have.property("method_args");
-    server.should.have.property("module_context");
+    server.should.have.property("methodArgs");
+    server.should.have.property("moduleContext");
     server.should.have.property("context");
   });
 
@@ -379,12 +379,12 @@ describe("httpsClient", function () {
 
   it("should throw error because of no transport", function () {
     (function () {
-      new rpc.client();
+      new rpc.Client();
     }).should.throw(Error);
   });
 
   it("should have transport and id", function () {
-    httpsClient = new rpc.client(httpsTransport);
+    httpsClient = new rpc.Client(httpsTransport);
     httpsClient.should.have.property("transport");
     httpsClient.should.have.property("id");
     httpsClient.id.should.equal(0);
@@ -457,12 +457,12 @@ describe("tcpClient", function () {
 
   it("should throw error because of no transport", function () {
     (function () {
-      new rpc.client();
+      new rpc.Client();
     }).should.throw(Error);
   });
 
   it("should have transport and id", function () {
-    tcpClient = new rpc.client(tcpTransport);
+    tcpClient = new rpc.Client(tcpTransport);
     tcpClient.should.have.property("transport");
     tcpClient.should.have.property("id");
     tcpClient.id.should.equal(0);
@@ -541,7 +541,7 @@ describe("Express middleware", function () {
   it("should correct works with httpClient", function (done) {
     var httpTransport = new rpc.httpTransport({port:8081});
     httpTransport.setHeader('Cookie', 'sessionID=' + sessionId);
-    httpClient = new rpc.client(httpTransport);
+    httpClient = new rpc.Client(httpTransport);
     var callback = function(err, raw){
       should.not.exist(err);
       var obj = JSON.parse(raw);
