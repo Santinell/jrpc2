@@ -5,35 +5,42 @@ rpcError = require './rpcError'
 
 class Server
 
-  constructor: (@mode = 'callback') ->
-    @methods = {}
+  constructor: (@methods = 'methods') ->
     @methodArgs = {}
-    @moduleContext = {}
+    @modules = {}
     @context = {}
 
-  expose: (name, func) ->
-    @methods[name] = func
+  expose: (fullName, func) ->
     args = func.toString().match(/function[^(]*\(([^)]*)\)/)[1]
-    @methodArgs[name] = if args then args.split(/,\s*/) else []
+    @methodArgs[fullName] = if args then args.split(/,\s*/) else []
+    [moduleName, methodName] = @splitMethod fullName
+    if !@modules[moduleName]
+      @modules[moduleName] = {}
+    @modules[moduleName][methodName] = func
 
-  setModuleContext: (moduleName, module) ->
-    context = {}
-    for prop of module
-      context[prop] = module[prop]
-    @moduleContext[moduleName] = context
+  contains: (str, sub) ->
+    str.indexOf(sub) isnt -1
+
+  splitMethod: (methodName) ->
+    if @contains methodName, "."
+      methodName.split "."
+    else
+      [@methods, methodName]
 
   getMethodContext: (methodName) ->
     context = {}
-    if ~methodName.indexOf('.')
-      [moduleName, _] = methodName.split '.'
-      context = @moduleContext[moduleName]
-    return extend(context, @context)
+    [moduleName, methodName] = @splitMethod methodName
+    context = @modules[moduleName]
+    return extend context, @context
+
+  getMethod: (methodName) ->
+    [moduleName, methodName] = @splitMethod methodName
+    return @modules[moduleName][methodName]
 
   exposeModule: (moduleName, module) ->
-    @setModuleContext moduleName, module
-    for elementName of module
-      if typeof module[elementName] is 'function' && elementName isnt 'constructor'
-        @expose moduleName+'.'+elementName, module[elementName]
+    for methodName of module
+      if typeof module[methodName] is "function" && methodName isnt "constructor"
+        @expose moduleName+"."+methodName, module[methodName]
     return
 
   checkAuth: (call, req, callback) ->
@@ -53,23 +60,20 @@ class Server
         callback()
 
   invoke: (req, methodName, params = [], callback = ->) ->
-    if !@methods[methodName]
+    if !@methodArgs[methodName]
       return callback rpcError.methodNotFound()
-    method = @methods[methodName]
+    method = @getMethod methodName
     context = @getMethodContext methodName
     context.req = req
     result = null
-    try
-      if params instanceof Array
-        result = method.apply context, params
-      else
-        argNames = @methodArgs[methodName]
-        args = []
-        for name in argNames
-          args.push params[name]
-        result = method.apply context, args
-    catch error
-      callback error
+    if params instanceof Array
+      result = method.apply context, params
+    else
+      argNames = @methodArgs[methodName]
+      args = []
+      for name in argNames
+        args.push params[name]
+      result = method.apply context, args
     if result? && typeof result.then is 'function'
       result.then (res) ->
         callback null, res
@@ -92,76 +96,68 @@ class Server
         @invoke req, method, param, callback
     async.series list, finalCallback
 
-  getIterator: (req) ->
-    (call, done) =>
-      setError = (error) ->
-        done null, (callback) ->
-          if error instanceof Error
-            error = rpcError.abstract error.message, -32099, call.id || null
-          else
-            error.id = call.id || null
-          callback null, error
 
-      setSuccess = (result) ->
-        done null, (callback) ->
-          response =
-            jsonrpc: '2.0'
-            result: result || null
-            id: call.id || null
-          callback null, response
+  handleSingle: (call, req, callback) ->
 
-      setResult = (err, result) ->
-        if !call.id?
-          done null, null
+    setError = (error) ->
+      if error instanceof Error
+        error = rpcError.abstract error.message, -32099, call.id || null
+      else
+        error.id = call.id || null
+      callback error
+
+    setSuccess = (result) ->
+      response =
+        jsonrpc: '2.0'
+        result: result || null
+        id: call.id || null
+      callback response
+
+    setResult = (err, result) ->
+      if !call.id?
+        callback null
+      else
+        if err?
+          setError err
         else
-          if err?
-            setError err
-          else
-            setSuccess result
+          setSuccess result
 
-      if call not instanceof Object
-        return setError rpcError.invalidRequest()
+    if call not instanceof Object
+      return setError rpcError.invalidRequest()
 
-      if !call.method || !call.jsonrpc || call.jsonrpc != '2.0'
-        return setError rpcError.invalidRequest call.id
+    if !call.method || !call.jsonrpc || call.jsonrpc != '2.0'
+      return setError rpcError.invalidRequest call.id
 
-      if !@methods[call.method]
-        return setError rpcError.methodNotFound call.id
+    if !@methodArgs[call.method]
+      return setError rpcError.methodNotFound call.id
 
-      @checkAuth call, req, (trusted) =>
-        if !trusted
-          return setResult rpcError.abstract "AccessDenied", -32000, call.id
-
-        @invoke req, call.method, call.params, setResult
+    @checkAuth call, req, (trusted) =>
+      if !trusted
+        return setResult(rpcError.abstract "AccessDenied", -32000, call.id)
+      @invoke req, call.method, call.params, setResult
 
 
+  handleBatch: (calls, req, callback) ->
+    if calls.length is 0
+      return callback rpcError.invalidRequest()
+
+    iterate = (call, done) =>
+      @handleSingle call, req, (res) -> done null, res
+
+    async.map calls, iterate, (err, results) ->
+      callback results.filter (v) -> v?
 
   handleCall: (json, req, reply) ->
     if typeof json is "string"
       try
-        calls = JSON.parse json
+        call = JSON.parse json
       catch error
         return reply rpcError.invalidRequest()
     else
-      calls = json
-
-    batch = 1
-    if calls not instanceof Array
-      calls = [calls]
-      batch = 0
-    else if calls.length is 0
-      return reply rpcError.invalidRequest()
-
-    async.map calls, @getIterator(req), (error, funcs) ->
-      funcs = funcs.filter (f) -> f != null
-      if funcs.length is 0
-        return reply null
-      async.parallel funcs, (err, response) ->
-        if response.length is 0
-          return reply null
-        if !batch && response instanceof Array
-          response = response[0]
-        reply response
-
+      call = json
+    if call not instanceof Array
+      @handleSingle call, req, reply
+    else
+      @handleBatch call, req, reply
 
 module.exports = Server

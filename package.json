@@ -39,8 +39,8 @@
     "xtend": "^4.0.0"
   },
   "devDependencies": {
-    "vow": "^0.4",
-    "coffee-script": "^1.1",
+    "bluebird": "^2.9.21",
+    "coffee-script": "^1.9",
     "mocha": "^2.1",
     "chai": "^2.0",
     "coveralls": "^2.11",

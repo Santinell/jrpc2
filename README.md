@@ -180,7 +180,7 @@ CLIENT EXAMPLE
   });
 
   //single call with positional parameters
-  client.call('users.auth', ["user", "pass"], function (err, raw) {
+  client.invoke('users.auth', ["user", "pass"], function (err, raw) {
     console.log(err, raw);
   });
 

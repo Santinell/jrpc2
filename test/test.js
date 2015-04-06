@@ -2,7 +2,7 @@ var should = require("chai").should();
 var fs = require("fs");
 var app = require('express')();
 var url = require("url");
-var Promise = Promise || require("vow").Promise;
+var Promise = require("bluebird");
 var rpc = require("../lib/jrpc2");
 var server = null;
 var httpsTransport = null;
@@ -12,7 +12,6 @@ var httpClient = null;
 var tcpClient = null;
 var sessionId = "9037c4852fc3a3f452b1ee2b93150603";
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 
 describe("RPC Core", function () {
   it("should have a Client, Server, rpcError and transports", function () {
@@ -73,17 +72,20 @@ describe("Server", function () {
 
   it("should have some fields", function () {
     server = new rpc.Server();
-    server.should.have.property("methods");
+    //server.should.have.property("methods");
     server.should.have.property("methodArgs");
-    server.should.have.property("moduleContext");
+    server.should.have.property("modules");
     server.should.have.property("context");
   });
 
-  it("should correct load modules from directory", function () {
+  it("should correct load modules from directory", function (done) {
     server.loadModules(__dirname + "/modules/", function () {
-      server.methods.should.have.property("users.auth");
-      server.methods.should.have.property("logs.userLogout");
-      server.methods["users.auth"].should.be.an["instanceof"](Function);
+      server.modules.should.have.property("users");
+      server.modules.should.have.property("logs");
+      server.modules.users.should.have.property("auth");
+      server.modules.logs.should.have.property("userLogout");
+      server.modules.users.auth.should.be.an["instanceof"](Function);
+      done();
     });
   });
 
@@ -91,18 +93,17 @@ describe("Server", function () {
     server.expose("sum", function (a, b) {
       return a + b;
     });
-    server.methods.should.have.property("sum");
-    server.methods.sum.should.be.an["instanceof"](Function);
+    server.modules.methods.should.have.property("sum");
+    server.modules.methods.sum.should.be.an["instanceof"](Function);
   });
 
   it("should have sucess expose function with promise", function () {
     server.expose("reverse", function (num) {
       return Promise.resolve(num*-1);
     });
-    server.should.have.property("methods");
-    server.methods.should.have.property("reverse");
-    server.methods.reverse.should.be.an["instanceof"](Function);
-    var res = server.methods.reverse(13);
+    server.modules.methods.should.have.property("reverse");
+    server.modules.methods.reverse.should.be.an["instanceof"](Function);
+    var res = server.modules.methods.reverse(13);
     should.not.equal(res, null);
     res.should.have.property("then");
   });
@@ -113,87 +114,84 @@ describe("Server", function () {
         return Math.log(num) / Math.log(base);
       }
     });
-    server.should.have.property("methods");
-    server.methods.should.have.property("math.log");
-    server.methods["math.log"].should.be.an["instanceof"](Function);
-  });
-
-  it("should correct work with context", function () {
-    server.expose("getName", function () {
-      return this.name;
-    });
-    server.methods.should.have.property("getName");
-    server.methods["getName"].should.be.an["instanceof"](Function);
-    var context = {name: "Ted"};
-    var res = server.methods.getName.bind(context)();
-    res.should.equal("Ted");
+    server.modules.should.have.property("math");
+    server.modules.math.should.have.property("log");
+    server.modules.math.log.should.be.an["instanceof"](Function);
   });
 
   it("should expose notification", function () {
     server.expose("console", function (message) {
       console.log("    >>" + message);
     });
-    server.methods.should.have.property("console");
-    should.equal(server.methods.console("Hello server"), undefined);
+    server.modules.methods.should.have.property("console");
+    should.equal(server.modules.methods.console("Hello server"), undefined);
   });
 
-  it("should error incorrectRequest because of wrong json", function () {
+  it("should error incorrectRequest because of wrong json", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: null, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}});
+      done();
     };
     server.handleCall('{is:those, "last.fm":>}', {}, callback);
   });
 
-  it("should error incorrectRequest because of no quotes of fields", function () {
+  it("should error incorrectRequest because of no quotes of fields", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: null, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}});
+      done();
     };
     server.handleCall('{id: 1, method: "sum", params: [1,3]}', {}, callback);
   });
 
-  it("should error incorrectRequest because of no jsonrpc field", function () {
+  it("should error incorrectRequest because of no jsonrpc field", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}});
+      done();
     };
     server.handleCall('{"id": 1, "method": "sum", "params": [1,3]}', {}, callback);
   });
 
-  it("should error incorrectRequest because of jsonrpc not equal 2.0", function () {
+  it("should error incorrectRequest because of jsonrpc not equal 2.0", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"1.0", "method": "sum", "params": [1,3]}', {}, callback);
   });
 
-  it("should error incorrectRequest because of no method field", function () {
+  it("should error incorrectRequest because of no method field", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "params": [1,3]}', {}, callback);
   });
 
-  it("should error methodNotFound in request", function () {
+  it("should error methodNotFound in request", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', error: {code: -32601, message: 'MethodNotFound'}});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "bear" }', {}, callback);
   });
 
-  it("should work with positional params", function () {
+  it("should work with positional params", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', result: 15});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "sum", "params": [3, 12] }', {}, callback);
   });
 
-  it("should work with named params", function () {
+  it("should work with named params", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', result: 0.9266284080291269});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "math.log", "params": {"num":10,"base":12} }', {}, callback);
   });
 
-  it("should correct work with promises (200s delay)", function (done) {
+  it("should correct work with promises", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', result: -130});
       done();
@@ -201,30 +199,33 @@ describe("Server", function () {
     server.handleCall('{"id": 1, "jsonrpc": "2.0", "method": "reverse", "params": {"num": 130}}', {}, callback);
   });
 
-  it("should error on empty batch", function () {
+  it("should error on empty batch", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: null, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}});
+      done();
     };
     server.handleCall('[]', {}, callback);
   });
 
-  it("should error on invalid batch", function () {
+  it("should error on invalid batch", function (done) {
     var callback = function (result) {
       result.should.deep.equal([
         {id: null, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}},
         {id: null, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}},
         {id: null, jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}}
       ]);
+      done();
     };
     server.handleCall('[1,2,3]', {}, callback);
   });
 
-  it("should correct work with batch", function () {
+  it("should correct work with batch", function (done) {
     var callback = function (result) {
       result.should.deep.equal([
         {id: 1, jsonrpc: '2.0', result: 29},
         {id: 2, jsonrpc: '2.0', result: 1.4159758378145286}
       ]);
+      done();
     };
     server.handleCall('[{"id": 1, "jsonrpc":"2.0", "method": "sum", "params": [13, 16] },{"jsonrpc":"2.0", "method": "console", "params": ["Test batch"]},{"id": 2, "jsonrpc":"2.0", "method": "math.log", "params": {"num":19,"base":8} }]', {}, callback);
   });
@@ -238,9 +239,9 @@ describe("Server", function () {
       var callback2 = function(result) {
         result.should.not.equal(true);
         done();
-      }
+      };
       server.checkAuth({}, {}, callback2);
-    }
+    };
     server.checkAuth({}, {}, callback);
   });
 
@@ -257,48 +258,54 @@ describe("Server", function () {
     var callback = function(res) {
       res.should.not.equal(true);
       done();
-    }
+    };
     server.checkAuth({}, {}, callback);
   });
 
-  it("should sessionId with right login and password", function () {
+  it("should sessionId with right login and password", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', result: {sessionID: sessionId}});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "users.auth", "params": ["admin", "swd"] }', {}, callback);
   });
 
-  it("should error for wrong login or password", function () {
+  it("should error for wrong login or password", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', error: {code: -32099, message: 'Wrong login or password'}});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "users.auth", "params": ["Ted", "frisbee"] }', {}, callback);
   });
 
-  it("should return context of this", function () {
+  it("should return context of this", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', result:["auth", "context", "req"] });
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "users.context", "params": [] }', {}, callback);
   });
 
-  it("should AccessDenied for request without sessionID", function () {
+  it("should AccessDenied for request without sessionID", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', error: {code: -32000, message: 'AccessDenied'}});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "sum", "params": [1, 5] }', {}, callback);
   });
 
-  it("should AccessDenied for wrong sessionID", function () {
+  it("should AccessDenied for wrong sessionID", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', error: {code: -32000, message: 'AccessDenied'}});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "sum", "params": [1, 5] }', {headers:{cookie: "sessionID=123"}}, callback);
   });
 
-  it("should correct result with correct sessionID", function () {
+  it("should correct result with correct sessionID", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', result: 6});
+      done();
     };
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "sum", "params": [1, 5] }', {headers:{cookie: "sessionID=" + sessionId}}, callback);
   });
