@@ -1,6 +1,5 @@
 exports.rpcError = require './rpcError'
-exports.Server = require('./Server').Server
-exports.instance = require('./Server').instance
+exports.Server = require './Server'
 exports.Client = require './Client'
 
 exports.httpTransport = require './httpTransport'
