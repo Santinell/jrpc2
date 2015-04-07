@@ -3,12 +3,15 @@ async = require 'async'
 extend = require 'xtend'
 rpcError = require './rpcError'
 
+exports.instance = {}
+
 class Server
 
   constructor: (@methods = 'methods') ->
     @methodArgs = {}
     @modules = {}
     @context = {}
+    exports.instance = @
 
   expose: (fullName, func) ->
     args = func.toString().match(/function[^(]*\(([^)]*)\)/)[1]
@@ -160,4 +163,4 @@ class Server
     else
       @handleBatch call, req, reply
 
-module.exports = Server
+exports.Server = Server
