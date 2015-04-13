@@ -32,7 +32,7 @@
   "scripts": {
     "test": "mocha -R spec",
     "build": "coffee -c -o lib src",
-    "publish": "npm build && mocha -R json | grep 'failures\": \[\]' >/dev/null && npm publish || echo 'Errors found'",
+    "publish": "npm build && mocha -R json | grep 'failures\": []' >/dev/null && npm publish || echo 'Errors found'",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec >/dev/null && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
   },
   "readmeFilename": "README.md",
