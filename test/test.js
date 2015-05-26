@@ -1,5 +1,7 @@
 var should = require("chai").should();
 var fs = require("fs");
+var crypto = require("crypto");
+var os = require("os");
 var app = require('express')();
 var url = require("url");
 var Promise = require("bluebird");
@@ -364,11 +366,17 @@ describe("tcpTransport", function () {
     tcpTransport.should.have.property("params");
   });
 
-  it("should throw error because of no port", function () {
+  it("should throw error because of no port or path", function () {
     tcpTransport.listen.should.throw(Error);
   });
 
-  it("should throw error because of no server", function () {
+  it("should throw error because of no server (path)", function () {
+    var tcpTransport = new rpc.tcpTransport({path: "/some/absurd/path"});
+    tcpTransport.params.should.deep.equal({path: "/some/absurd/path"});
+    tcpTransport.listen.should.throw(Error);
+  });
+
+  it("should throw error because of no server (port)", function () {
     tcpTransport = new rpc.tcpTransport({port: 9000});
     tcpTransport.params.should.deep.equal({port: 9000});
     tcpTransport.listen.should.throw(Error);
@@ -489,6 +497,20 @@ describe("tcpClient", function () {
       should.equal(err, null);
       var obj = JSON.parse(raw);
       obj.should.deep.equal({id: 2, jsonrpc: "2.0", error: {code: -32000, message: 'AccessDenied'}});
+      done();
+    });
+  });
+
+  it("should be able to utilize unix socket connection", function (done) {
+    var socketFile = os.tmpdir() + "/" + crypto.randomBytes(4).readUInt32LE(0) + crypto.randomBytes(4).readUInt32LE(0) + ".socket";
+    var tcpTransport = new rpc.tcpTransport({path: socketFile});
+    tcpTransport.listen(server);
+    var tcpClient = new rpc.Client(tcpTransport);
+    tcpClient.invoke('sum', [5, 16], function (err, raw) {
+      should.equal(err, null);
+      var obj = JSON.parse(raw);
+      obj.should.deep.equal({id: 1, jsonrpc: "2.0", result: 21});
+      fs.unlinkSync(socketFile);
       done();
     });
   });
