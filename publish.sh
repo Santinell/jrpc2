@@ -1,1 +1,1 @@
-npm build && mocha -R json | grep 'failures\": \[\]' >/dev/null && npm publish || echo 'Errors found'
+npm run build && npm run mocha | grep 'failures\": \[\]' >/dev/null && npm publish || echo 'Errors found'

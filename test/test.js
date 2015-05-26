@@ -507,10 +507,10 @@ describe("tcpClient", function () {
     tcpTransport.listen(server);
     var tcpClient = new rpc.Client(tcpTransport);
     tcpClient.invoke('sum', [5, 16], function (err, raw) {
+      fs.unlinkSync(socketFile);
       should.equal(err, null);
       var obj = JSON.parse(raw);
       obj.should.deep.equal({id: 1, jsonrpc: "2.0", result: 21});
-      fs.unlinkSync(socketFile);
       done();
     });
   });

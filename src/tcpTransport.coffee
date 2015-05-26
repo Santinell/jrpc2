@@ -25,8 +25,8 @@ class tcpTransport
   listen: (server) ->
     @tcpServer = net.createServer (socket) ->
       socket.on 'error', -> socket.end()
-      socket.on 'data', (data)->
-        ip = socket.remoteAddress?.replace('::ffff:','')
+      socket.on 'data', (data) ->
+        ip = socket.remoteAddress?.replace('::ffff:', '')
         server.handleCall data.toString(), {client_ip: ip}, (answer) ->
           socket.write JSON.stringify answer if answer
     if @params.path?
