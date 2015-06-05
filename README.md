@@ -5,6 +5,8 @@
 JRPC2
 ======
 
+[![Join the chat at https://gitter.im/Santinell/jrpc2](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Santinell/jrpc2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 JSON-RPC 2.0 library with support of batches and named parameters.
 
 Middlewares:
