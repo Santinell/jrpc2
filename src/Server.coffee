@@ -19,17 +19,13 @@ class Server
       @modules[moduleName] = {}
     @modules[moduleName][methodName] = func
 
-  contains: (str, sub) ->
-    str.indexOf(sub) isnt -1
-
   splitMethod: (methodName) ->
-    if @contains methodName, "."
+    if "." in methodName
       methodName.split "."
     else
       [@methods, methodName]
 
   getMethodContext: (methodName) ->
-    context = {}
     [moduleName, methodName] = @splitMethod methodName
     context = @modules[moduleName]
     return extend context, @context
