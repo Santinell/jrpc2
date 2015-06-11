@@ -92,8 +92,7 @@ describe("Socket.io middleware", function() {
           message: 'AccessDenied'
         }
       });
-      socket.removeListener('message', onMessage);
-      socket.close();
+      socket.removeAllListeners('message');
       done();
     };
     var onConnect = function() {
@@ -107,7 +106,6 @@ describe("Socket.io middleware", function() {
     server.checkAuth = function(call, req, callback) {
       callback(true);
     };
-    socket.open();
     socket.on('message', function(data) {
       var obj = JSON.parse(data);
       obj.should.deep.equal({
@@ -117,6 +115,7 @@ describe("Socket.io middleware", function() {
       });
       done();
     });
+    socket.send(client.request('math.sum', [3245, 434]));
 
   });
 
