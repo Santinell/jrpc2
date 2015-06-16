@@ -62,6 +62,68 @@ describe("Server", function () {
     server.modules.math.log.should.be.an["instanceof"](Function);
   });
 
+  it("should have success expose module with submodules", function () {
+    server.exposeModule("test", {
+      sub1: {
+        sum: function (a, b) {
+          return a+b;
+        },
+        diff: function (a, b) {
+          return a-b;
+        }
+      },
+      sub2: {
+        prod: function (a, b) {
+          return a*b;
+        },
+        div: function (a, b) {
+          return a/b;
+        }
+      },
+    });
+
+    server.modules.should.have.property("test.sub1");
+    server.modules["test.sub1"].should.have.property("sum");
+    server.modules["test.sub1"].should.have.property("diff");
+    server.modules["test.sub1"].sum.should.be.an["instanceof"](Function);
+    server.modules["test.sub1"].diff.should.be.an["instanceof"](Function);
+
+    server.modules.should.have.property("test.sub2");
+    server.modules["test.sub2"].should.have.property("prod");
+    server.modules["test.sub2"].should.have.property("div");
+    server.modules["test.sub2"].prod.should.be.an["instanceof"](Function);
+    server.modules["test.sub2"].div.should.be.an["instanceof"](Function);
+  });
+
+  it("should have success expose with long names", function () {
+    server.expose("test.test1", function (a, b) {
+      return a-14;
+    });
+    server.modules.should.have.property("test");
+    server.modules["test"].should.have.property("test1");
+    server.modules["test"].test1.should.be.an["instanceof"](Function);
+  });
+
+  it("should have success expose with very long names", function () {
+    server.expose("test.subtest.test2", function (a, b) {
+      return a-199;
+    });
+
+    server.modules.should.have.property("test.subtest");
+    server.modules["test.subtest"].should.have.property("test2");
+    server.modules["test.subtest"].test2.should.be.an["instanceof"](Function);
+  });
+
+  it("should have success expose with extreemly long names", function () {
+    server.expose("test.subtest.subsubtest.subsubsubtest.test3", function (a, b) {
+      return a-19999999;
+    });
+
+    server.modules.should.have.property("test.subtest.subsubtest.subsubsubtest");
+    server.modules["test.subtest.subsubtest.subsubsubtest"].should.have.property("test3");
+    server.modules["test.subtest.subsubtest.subsubsubtest"].test3.should.be.an["instanceof"](Function);
+  });
+
   it("should expose notification", function () {
     server.expose("console", function (message) {
       console.log("    >>" + message);

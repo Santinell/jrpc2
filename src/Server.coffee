@@ -21,7 +21,9 @@ class Server
 
   splitMethod: (methodName) ->
     if "." in methodName
-      methodName.split "."
+      res = methodName.split('.')
+      method = res.pop()
+      [res.join('.'), method]
     else
       [@methods, methodName]
 
@@ -36,8 +38,11 @@ class Server
 
   exposeModule: (moduleName, module) ->
     for methodName of module
-      if typeof module[methodName] is "function" && methodName isnt "constructor"
-        @expose moduleName+"."+methodName, module[methodName]
+      switch typeof module[methodName]
+        when "function" then if methodName isnt "constructor"
+          @expose moduleName+"."+methodName, module[methodName]
+        when "object"
+          @exposeModule moduleName+"."+methodName, module[methodName]
     return
 
   checkAuth: (call, req, callback) ->
