@@ -87,10 +87,10 @@ Example of 'math' module with no submodules (./modules/math.js in this example):
 
 ```javascript
 module.exports = {
-  add: function(a, b) {
+  add: function (a, b) {
     return Promise.resolve(a + b);
   },
-  pow: function(a, b) {
+  pow: function (a, b) {
     return Promise.resolve(Math.pow(a, b));
   }
 }
