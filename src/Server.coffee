@@ -112,7 +112,7 @@ class Server
       response =
         jsonrpc: '2.0'
         result: result || null
-        id: call.id || null
+        id: if typeof call.id is 'number' then call.id else (call.id || null)
       callback response
 
     setResult = (err, result) ->
