@@ -56,7 +56,7 @@ var app = require('express')();
 var rpcServer = new rpc.Server();
 
 rpcServer.loadModules(__dirname + '/modules/', function () {
-  app.post('/api', rpc.middleware(rpcServer));  
+  app.post('/api', rpc.middleware(rpcServer));
   app.listen(80);
 });
 
@@ -83,7 +83,20 @@ rpcServer.loadModules(__dirname + '/modules/', function () {
 
 JSON-RPC modules loaded automatically. Just put it in one directory.
 
-Example of 'math' module (./modules/math.js in this example):
+Example of 'math' module with no submodules (./modules/math.js in this example):
+
+```javascript
+module.exports = {
+  add: function(a, b) {
+    return Promise.resolve(a + b);
+  },
+  pow: function(a, b) {
+    return Promise.resolve(Math.pow(a, b));
+  }
+}
+```
+
+Example of 'math' module using submodules (Also ./modules/math.js):
 
 ```javascript
 
@@ -124,7 +137,7 @@ If you want you can manual load your methods and modules.
 
   rpcServer.expose('sayHello',function(){
     return Promise.resolve("Hello!");
-  });  
+  });
 
   rpcServer.exposeModule('fs',{
     readFile: function (file) {
