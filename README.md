@@ -96,7 +96,7 @@ Example of 'math' module (./modules/math.js in this example):
         }
         return Promise.resolve(sum);
       },
-      product: function() {
+      product: function () {
         var product = 1;
         for (var key in arguments) {
           sum *= arguments[key];
@@ -108,7 +108,7 @@ Example of 'math' module (./modules/math.js in this example):
       log: function (num, base) {
         return Promise.resolve(Math.log(num)/Math.log(base));
       },
-      pow: function(base, power) {
+      pow: function (base, power) {
         return promise.resolve(Math.pow(base, power));
       }
     }
