@@ -100,19 +100,20 @@ class Server
 
 
   handleSingle: (call, req, callback) ->
+    responseId = if typeof call.id is 'number' then call.id else (call.id || null)
 
     setError = (error) ->
       if error instanceof Error
-        error = rpcError.abstract error.message, -32099, call.id || null
+        error = rpcError.abstract error.message, -32099, responseId
       else
-        error.id = call.id || null
+        error.id = responseId
       callback error
 
     setSuccess = (result) ->
       response =
         jsonrpc: '2.0'
         result: result || null
-        id: call.id || null
+        id: responseId
       callback response
 
     setResult = (err, result) ->
@@ -128,14 +129,14 @@ class Server
       return setError rpcError.invalidRequest()
 
     if !call.method || !call.jsonrpc || call.jsonrpc != '2.0'
-      return setError rpcError.invalidRequest call.id
+      return setError rpcError.invalidRequest responseId
 
     if !@methodArgs[call.method]
-      return setError rpcError.methodNotFound call.id
+      return setError rpcError.methodNotFound responseId
 
     @checkAuth call, req, (trusted) =>
       if !trusted
-        return setResult(rpcError.abstract "AccessDenied", -32000, call.id)
+        return setResult(rpcError.abstract "AccessDenied", -32000, responseId)
       @invoke req, call.method, call.params, setResult
 
 

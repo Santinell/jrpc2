@@ -180,6 +180,38 @@ describe("Server", function () {
     server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "bear" }', {}, callback);
   });
 
+  it("should contain error id identical to request id when request id = 0", function(done) {
+    var callback = function (result) {
+      result.should.deep.equal({id: 0, jsonrpc: '2.0', error: {code: -32601, message: 'MethodNotFound'}});
+      done();
+    };
+    server.handleCall('{"id": 0, "jsonrpc":"2.0", "method": "bear" }', {}, callback);
+  });
+
+  it("should contain error id identical to request id when request id is non-numeric", function(done) {
+    var callback = function (result) {
+      result.should.deep.equal({id: "non-numeric", jsonrpc: '2.0', error: {code: -32600, message: 'InvalidRequest'}});
+      done();
+    };
+    server.handleCall('{"id": "non-numeric", "jsonrpc":"1.0", "method": "sum", "params": [1,3]}', {}, callback);
+  });
+
+  it("should contain an id field equal to request id even if non-numeric", function(done) {
+    var callback = function (result) {
+      result.should.deep.equal({id: "non-numeric", jsonrpc: '2.0', result: 24});
+      done();
+    };
+    server.handleCall('{"id": "non-numeric", "jsonrpc":"2.0", "method": "sum", "params": [12, 12] }', {}, callback);
+  });
+
+  it("should contain an id field equal to request id even when zero", function(done) {
+    var callback = function (result) {
+      result.should.deep.equal({id: 0, jsonrpc: '2.0', result: 24});
+      done();
+    };
+    server.handleCall('{"id": 0, "jsonrpc":"2.0", "method": "sum", "params": [12, 12] }', {}, callback);
+  });
+
   it("should work with positional params", function (done) {
     var callback = function (result) {
       result.should.deep.equal({id: 1, jsonrpc: '2.0', result: 15});
