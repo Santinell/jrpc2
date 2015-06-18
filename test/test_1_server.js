@@ -62,7 +62,7 @@ describe("Server", function () {
     server.modules.math.log.should.be.an["instanceof"](Function);
   });
 
-  it("should have success expose module with submodules", function () {
+  it("should have success expose module with submodules", function (done) {
     server.exposeModule("test", {
       sub1: {
         sum: function (a, b) {
@@ -87,12 +87,29 @@ describe("Server", function () {
     server.modules["test.sub1"].should.have.property("diff");
     server.modules["test.sub1"].sum.should.be.an["instanceof"](Function);
     server.modules["test.sub1"].diff.should.be.an["instanceof"](Function);
+    var callback = function (result) {
+      result.should.deep.equal({id: 1, jsonrpc: '2.0', result: 70});
+    };
+    server.handleCall('{"id": 1, "jsonrpc":"2.0", "method": "test.sub1.sum", "params": [14,56]}', {}, callback);
+    var callback2 = function (result) {
+      result.should.deep.equal({id: 2, jsonrpc: '2.0', result: 100});
+    };
+    server.handleCall('{"id": 2, "jsonrpc":"2.0", "method": "test.sub1.diff", "params": [120,20]}', {}, callback2);
 
     server.modules.should.have.property("test.sub2");
     server.modules["test.sub2"].should.have.property("prod");
     server.modules["test.sub2"].should.have.property("div");
     server.modules["test.sub2"].prod.should.be.an["instanceof"](Function);
     server.modules["test.sub2"].div.should.be.an["instanceof"](Function);
+    var callback3 = function (result) {
+      result.should.deep.equal({id: 3, jsonrpc: '2.0', result: 110});
+    };
+    server.handleCall('{"id": 3, "jsonrpc":"2.0", "method":"test.sub2.prod", "params": [2,55]}', {}, callback3);
+    var callback4 = function (result) {
+      result.should.deep.equal({id: 4, jsonrpc: '2.0', result: 6});
+    };
+    server.handleCall('{"id": 4, "jsonrpc":"2.0", "method":"test.sub2.div", "params": [300,50]}', {}, callback4);
+    setTimeout(done, 100);
   });
 
   it("should have success expose with long names", function () {
