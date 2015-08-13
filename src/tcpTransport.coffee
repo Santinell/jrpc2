@@ -24,12 +24,29 @@ class tcpTransport
 
   listen: (server) ->
     @tcpServer = net.createServer (socket) ->
+      receiveString = ""
+      timerknock = null
+
       socket.on 'error', -> socket.end()
       socket.on 'data', (data) ->
         ip = socket.remoteAddress || '127.0.0.1'
         ip = ip.replace('::ffff:', '')
-        server.handleCall data.toString(), {client_ip: ip}, (answer) ->
-          socket.write JSON.stringify answer if answer
+        receiveString = receiveString + data.toString("utf8")
+        try
+          jsonObject = JSON.parse(receiveString)
+          receiveString = "";
+          clearTimeout(timerknock)
+          timerknock = null
+          server.handleCall jsonObject, {client_ip: ip}, (answer) ->
+            socket.write JSON.stringify answer if answer
+        catch
+          if timerknock == null
+            timerknock = setTimeout(() ->
+              console.log("Timeout, reset receive String to 0")
+              timerknock = null
+              receiveString = "";
+            , 1000)
+
     if @params.path?
       @tcpServer.listen @params.path
     else
