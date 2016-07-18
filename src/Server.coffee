@@ -112,7 +112,7 @@ class Server
     setSuccess = (result) ->
       response =
         jsonrpc: '2.0'
-        result: result || null
+        result: if typeof result != 'undefined' then result else null
         id: responseId
       callback response
 
