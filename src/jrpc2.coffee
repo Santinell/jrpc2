@@ -9,3 +9,5 @@ exports.wsMiddleware = require './wsMiddleware'
 
 exports.middleware = require('./middleware').middleware
 exports.httpListener = require('./middleware').httpListener
+
+exports.wsTransport = require('./wsTransport')
