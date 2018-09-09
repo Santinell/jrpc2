@@ -9,7 +9,7 @@ class wsTransport
     @httpParams = @params.http or {}
     @wsParams = @params.ws or {}
     
-    @http = if @httpParams.ssl then require('https') else require('http')
+    @http = if @params.ssl then require('https') else require('http')
 
   send: (body, callback) ->
     ws = new WebSocket @params.url
