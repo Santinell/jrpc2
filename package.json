@@ -39,6 +39,7 @@
   "readmeFilename": "README.md",
   "dependencies": {
     "async": "^1.2",
+    "ws": "^6.0.0",
     "xtend": "^4.0.0"
   },
   "devDependencies": {
