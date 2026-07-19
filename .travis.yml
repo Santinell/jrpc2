@@ -1,9 +1,0 @@
-before_script:
-  coffee -c -o lib src
-after_success:
-  npm run coverage
-language: node_js
-node_js:
-  - "0.12"
-  - "0.10"
-  - "iojs"
