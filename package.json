@@ -7,18 +7,52 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-    "./http": { "types": "./dist/transports/http.d.ts", "default": "./dist/transports/http.js" },
-    "./http-client": { "types": "./dist/transports/http-client.d.ts", "default": "./dist/transports/http-client.js" },
-    "./fetch": { "types": "./dist/transports/fetch.d.ts", "default": "./dist/transports/fetch.js" },
-    "./tcp": { "types": "./dist/transports/tcp.d.ts", "default": "./dist/transports/tcp.js" },
-    "./tcp-client": { "types": "./dist/transports/tcp-client.d.ts", "default": "./dist/transports/tcp-client.js" },
-    "./express": { "types": "./dist/middleware/express.d.ts", "default": "./dist/middleware/express.js" },
-    "./fastify": { "types": "./dist/middleware/fastify.d.ts", "default": "./dist/middleware/fastify.js" },
-    "./socket.io": { "types": "./dist/middleware/socketio.d.ts", "default": "./dist/middleware/socketio.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./http": {
+      "types": "./dist/transports/http.d.ts",
+      "default": "./dist/transports/http.js"
+    },
+    "./http-client": {
+      "types": "./dist/transports/http-client.d.ts",
+      "default": "./dist/transports/http-client.js"
+    },
+    "./fetch": {
+      "types": "./dist/transports/fetch.d.ts",
+      "default": "./dist/transports/fetch.js"
+    },
+    "./tcp": {
+      "types": "./dist/transports/tcp.d.ts",
+      "default": "./dist/transports/tcp.js"
+    },
+    "./tcp-client": {
+      "types": "./dist/transports/tcp-client.d.ts",
+      "default": "./dist/transports/tcp-client.js"
+    },
+    "./express": {
+      "types": "./dist/middleware/express.d.ts",
+      "default": "./dist/middleware/express.js"
+    },
+    "./fastify": {
+      "types": "./dist/middleware/fastify.d.ts",
+      "default": "./dist/middleware/fastify.js"
+    },
+    "./socket.io": {
+      "types": "./dist/middleware/socketio.d.ts",
+      "default": "./dist/middleware/socketio.js"
+    }
   },
-  "files": ["dist", "README.md", "MIGRATION.md", "LICENSE"],
-  "engines": { "node": ">=20.19" },
+  "files": [
+    "dist",
+    "README.md",
+    "MIGRATION.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
@@ -32,21 +66,27 @@
     "socket.io": "^4.0.0"
   },
   "peerDependenciesMeta": {
-    "express": { "optional": true },
-    "fastify": { "optional": true },
-    "socket.io": { "optional": true }
+    "express": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    },
+    "socket.io": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/node": "^22.15.3",
-    "biome": "^0.3.3",
     "express": "^5.1.0",
     "fastify": "^5.3.3",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
-    "tsdown": "^0.12.9",
+    "tsdown": "^0.23.7",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.2",
+    "vite": "^6.4.6",
+    "vitest": "^5.1.0",
     "zod": "^4.0.0"
   }
 }
